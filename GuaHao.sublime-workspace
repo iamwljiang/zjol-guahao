@@ -1,0 +1,967 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"wan",
+				"want_recv_len"
+			],
+			[
+				"LOG_",
+				"LOG_TO_FILE"
+			],
+			[
+				"oss",
+				"ostringstream"
+			],
+			[
+				"user",
+				"user_id"
+			],
+			[
+				"hosp",
+				"hospital"
+			],
+			[
+				"hos",
+				"hospital_map"
+			],
+			[
+				"en",
+				"encode_time"
+			],
+			[
+				"LOG",
+				"LOG_DEBUG"
+			],
+			[
+				"last",
+				"last_active_time"
+			],
+			[
+				"nex",
+				"next_iter"
+			],
+			[
+				"wait",
+				"wait_connections"
+			],
+			[
+				"APR_",
+				"APR_SUCCESS"
+			],
+			[
+				"depar",
+				"department"
+			],
+			[
+				"not",
+				"not_active_interval"
+			],
+			[
+				"Reque",
+				"RequestConfirmDoctor"
+			],
+			[
+				"Pro",
+				"ProcessConfirmResult"
+			],
+			[
+				"RequestDo",
+				"RequestDialogbJS"
+			],
+			[
+				"user_da",
+				"user_date_hospital"
+			],
+			[
+				"Process",
+				"ProcessVerifyResult"
+			],
+			[
+				"use",
+				"use_feh_read_verify_code"
+			],
+			[
+				"Set",
+				"SetHeaderField"
+			],
+			[
+				"request",
+				"RequestVerify"
+			],
+			[
+				"apr_",
+				"apr_pcalloc"
+			],
+			[
+				"D",
+				"DOCTOR"
+			],
+			[
+				"depart",
+				"department_map"
+			],
+			[
+				"SE",
+				"SetRequestLine"
+			],
+			[
+				"CH",
+				"CHttpProcesser"
+			],
+			[
+				"unk",
+				"unkown_number"
+			],
+			[
+				"cont",
+				"Content-Length"
+			],
+			[
+				"SEt",
+				"SetHeaderField"
+			],
+			[
+				"read",
+				"read_data"
+			],
+			[
+				"user_",
+				"user_date_doctor"
+			],
+			[
+				"set",
+				"set_visit_cookie"
+			],
+			[
+				"dep",
+				"department_map"
+			],
+			[
+				"DE",
+				"DEPMAP"
+			],
+			[
+				"de",
+				"department_map"
+			],
+			[
+				"ver",
+				"verify_login_image"
+			],
+			[
+				"is",
+				"is_lock"
+			],
+			[
+				"req_he",
+				"req_header"
+			],
+			[
+				"img",
+				"img_file_path"
+			],
+			[
+				"res_",
+				"res_content"
+			],
+			[
+				"get",
+				"GetContent"
+			],
+			[
+				"Parse",
+				"ParseResponse"
+			],
+			[
+				"cur",
+				"current_request_type"
+			],
+			[
+				"las",
+				"last_active_time"
+			],
+			[
+				"close",
+				"close_connection"
+			],
+			[
+				"Get",
+				"GetRequest"
+			],
+			[
+				"la",
+				"last_active_time"
+			],
+			[
+				"cu",
+				"current_request_type"
+			],
+			[
+				"ci",
+				"ci"
+			],
+			[
+				"data",
+				"data_current_len"
+			],
+			[
+				"da",
+				"data_current_len"
+			],
+			[
+				"chun",
+				"chunk_header_begin"
+			],
+			[
+				"parse_",
+				"parse_chunk"
+			],
+			[
+				"chunk_da",
+				"chunk_data_begin"
+			],
+			[
+				"chun_da",
+				"chunk_data_begin"
+			],
+			[
+				"chunk",
+				"chunk_data_len"
+			],
+			[
+				"dat",
+				"data_current_len"
+			],
+			[
+				"to",
+				"data_total_len"
+			],
+			[
+				"end",
+				"endptr"
+			],
+			[
+				"recv",
+				"recv_buffer"
+			],
+			[
+				"recv_",
+				"recv_len"
+			],
+			[
+				"chu",
+				"chunk_data_begin"
+			],
+			[
+				"curr",
+				"current_chunk_data_len"
+			],
+			[
+				"had",
+				"header_end"
+			],
+			[
+				"apr_pa",
+				"apr_pcalloc"
+			],
+			[
+				"Pa",
+				"ParseHospitalHtml"
+			],
+			[
+				"find",
+				"find_item"
+			],
+			[
+				"HOS",
+				"HOSMAP"
+			],
+			[
+				"req_h",
+				"req_header_len"
+			],
+			[
+				"sen",
+				"send_data"
+			],
+			[
+				"MAP",
+				"MCMAP"
+			],
+			[
+				"req_",
+				"req_header"
+			],
+			[
+				"req_hea",
+				"req_header_len"
+			],
+			[
+				"Req",
+				"RequestHeader"
+			],
+			[
+				"req",
+				"current_request_type"
+			],
+			[
+				"ma",
+				"manager_connections"
+			],
+			[
+				"w",
+				"wait_connections"
+			],
+			[
+				"APR_POLL",
+				"APR_POLLIN"
+			],
+			[
+				"res",
+				"res_doc"
+			],
+			[
+				"del",
+				"DEL"
+			],
+			[
+				"apr_soc",
+				"apr_socket_t"
+			],
+			[
+				"APR",
+				"APR_SUCCESS"
+			],
+			[
+				"con",
+				"context_length"
+			],
+			[
+				"toupp",
+				"toupper_self"
+			],
+			[
+				"a",
+				"all_headers"
+			],
+			[
+				"re",
+				"request_content"
+			],
+			[
+				"p",
+				"protocol"
+			],
+			[
+				"oc",
+				"occupantJid"
+			],
+			[
+				"User",
+				"UserInfo"
+			],
+			[
+				"occ",
+				"occupantNickname"
+			],
+			[
+				"occpan",
+				"occupantJid"
+			],
+			[
+				"Muc",
+				"MUCException"
+			],
+			[
+				"thro",
+				"throws"
+			],
+			[
+				"Sender",
+				"senderJID"
+			],
+			[
+				"pre",
+				"presenceElement"
+			],
+			[
+				"room",
+				"room_manager_map"
+			],
+			[
+				"this",
+				"this_room_user_list"
+			],
+			[
+				"Ba",
+				"BareJID"
+			],
+			[
+				"roo",
+				"room_manager_map"
+			],
+			[
+				"MUc",
+				"MucRoomUser"
+			],
+			[
+				"type",
+				"typemap"
+			],
+			[
+				"mov",
+				"mov_typename_map"
+			],
+			[
+				"mov_",
+				"mov_typename_map"
+			],
+			[
+				"CA",
+				"CATEGORY_NEWS"
+			],
+			[
+				"C",
+				"CATEGORY_ENTERTAINMENT"
+			],
+			[
+				"mov_type",
+				"mov_type_map"
+			],
+			[
+				"str",
+				"str_mov_id"
+			],
+			[
+				"e",
+				"empty"
+			],
+			[
+				"pri",
+				"private"
+			],
+			[
+				"te",
+				"template_file"
+			],
+			[
+				"uid",
+				"uid_hash_sub_key"
+			],
+			[
+				"u_has",
+				"uid_hash_key"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "HttpProcesser.h",
+			"settings":
+			{
+				"buffer_size": 4619,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "HttpProcesser.cpp",
+			"settings":
+			{
+				"buffer_size": 45957,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "Strutil.cpp",
+			"settings":
+			{
+				"buffer_size": 1374,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "README",
+			"settings":
+			{
+				"buffer_size": 145,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "ParseResponse.h",
+			"settings":
+			{
+				"buffer_size": 1056,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "ParseResponse.cpp",
+			"settings":
+			{
+				"buffer_size": 8188,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "Strutil.h",
+			"settings":
+			{
+				"buffer_size": 586,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+			[
+				"ssc",
+				"Set Syntax: C"
+			]
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/E/Company/self/guahao/ParseHtml.cpp",
+		"/E/Company/self/guahao/RequestHeader.cpp",
+		"/E/Company/self/guahao/RequestHeader.h",
+		"/E/Company/self/guahao/Zutil.cpp",
+		"/E/Company/self/guahao/Urlcode.cpp",
+		"/E/Company/self/guahao/Urlcode.h",
+		"/E/Company/self/guahao/Zutil.h",
+		"/E/Company/self/guahao/ParseResponse.h",
+		"/E/Company/self/guahao/ParseResponse.cpp",
+		"/E/Company/self/guahao/Struitl.cpp",
+		"/E/Company/self/guahao/Struitl.h",
+		"/E/Company/self/guahao/ParseHtml.h",
+		"/E/Company/self/guahao/main.cpp",
+		"/E/Company/self/guahao/README",
+		"/E/Company/self/guahao/DataType.h",
+		"/E/Company/self/guahao/Makefile",
+		"/E/Company/self/guahao/HttpProcesser.cpp",
+		"/E/Company/self/guahao/Login.cpp",
+		"/E/Company/self/guahao/Login.h",
+		"/C/Users/lenovo/Desktop/zjol/dialogA.js",
+		"/C/Users/lenovo/Desktop/zjol/Select.js",
+		"/C/Users/lenovo/Desktop/zjol/Register.js",
+		"/C/Users/lenovo/Desktop/zjol/dialogB.js",
+		"/C/Users/lenovo/Desktop/新建文件夹/main.cpp",
+		"/C/Users/lenovo/Desktop/新建文件夹/OnlineMsgHandle.cpp",
+		"/C/Users/lenovo/Desktop/新建文件夹/OnlineMsgHandle.h",
+		"/C/Users/lenovo/Desktop/OnlineMsgHandle.h",
+		"/C/Users/lenovo/Desktop/PresenceExtensionModule.java",
+		"/C/Users/lenovo/Desktop/PresenceModule.java",
+		"/C/Users/lenovo/Desktop/MucRoomUser.java",
+		"/C/Users/lenovo/Desktop/ngx_http_recommend_service_module.c",
+		"/C/Users/lenovo/Desktop/ppMovieCategory.cpp",
+		"/C/Users/lenovo/Desktop/ppMovieCategory.h",
+		"/C/Users/lenovo/Desktop/ppMovieType.cpp",
+		"/C/Users/lenovo/Desktop/ppMovieType.h",
+		"/E/开源/boost_1_47_0/boost/program_options/variables_map.hpp",
+		"/E/Company/self/libevent/libevent_begin.cpp",
+		"/E/开源/apr/apr-util-1.4.1/test/testcrypto.c",
+		"/E/开源/apr/apr-util-1.4.1/test/testuuid.c",
+		"/E/开源/apr/apr-util-1.4.1/test/testuri.c",
+		"/E/开源/apr/apr-util-1.4.1/test/testmd5.c"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"RECV_LEN",
+			"read_data(apr",
+			"ProcessConfirmResult",
+			"请求登陆的响应正文",
+			"recv_data(ap",
+			"recv_data",
+			"ProcessNotActive",
+			"close_connection",
+			"manager_connections.erase",
+			"add_socket_to_pollset",
+			"manager_connections",
+			"recv_data",
+			"read_data",
+			"ProcessVerifyResult",
+			"apr_socket_recv eof",
+			"ProcessActive call process error",
+			"LOG_DEBUG",
+			"ShowHeader",
+			"RequestLogin",
+			"RequestVerify",
+			"need_send",
+			"send_len",
+			"req_header_len",
+			"void",
+			"ProcessConfirmResult",
+			"RequestVerify",
+			"CONFIRM",
+			"ProcessConfirm",
+			"RequestVerify",
+			"请求指定科室的医生列表的响应正文",
+			"RequestDepartment",
+			"SetRequestLine",
+			"JS",
+			"RequestVerify",
+			" ",
+			"s",
+			"var",
+			";",
+			"sfz",
+			"         ",
+			"=",
+			" =",
+			"TRIM_ALL_BLANK",
+			"find_item",
+			"CParseHtml",
+			"vcode",
+			"rh",
+			"single_cookie_values",
+			"use_feh_read_verify_code",
+			"date_current_len",
+			"recv_data",
+			"data",
+			"zdata",
+			"nzdata",
+			"zdata",
+			"ndata",
+			"data",
+			"hospitol_map",
+			"SKIP_HEAD_BLANK",
+			"const",
+			"SKIP_HEAD_BLANK",
+			"	\n",
+			"RequestLogin();\n\n	void 			RequestHospital();\n\n	void 			RequestDepartment();\n\n	void 			RequestDoctor();\n\n	void 			Stop();",
+			"RequestHospital",
+			"RequestLogin",
+			"void			RequestLogin();\n\n	void 			RequestHospital();\n\n	void 			RequestDepartment();\n\n	void 			RequestDoctor();\n",
+			"std::cout",
+			"showDialog",
+			"zYuyue",
+			"showDialog",
+			"online_msg_thread_func",
+			"CheckUseablePoint",
+			"online_msg_handle_ptr",
+			"online_msg_thread_func",
+			"online_msg_handle_ptr",
+			"BareJID",
+			"Map",
+			"repository",
+			"ngx_http_recommend_delay_output",
+			"wParse",
+			"wShowPage",
+			"pp_mov_type",
+			"CPPMoiveType",
+			"/TODO",
+			"ext",
+			"TODO",
+			"ngx_http_recommend_delay_output",
+			"//todo",
+			"variables_map",
+			"clear"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "HttpProcesser.h",
+					"settings":
+					{
+						"buffer_size": 4619,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								618,
+								618
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 156.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "HttpProcesser.cpp",
+					"settings":
+					{
+						"buffer_size": 45957,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11376,
+								11376
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 6255.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "Strutil.cpp",
+					"settings":
+					{
+						"buffer_size": 1374,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 495.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "README",
+					"settings":
+					{
+						"buffer_size": 145,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								145,
+								145
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "ParseResponse.h",
+					"settings":
+					{
+						"buffer_size": 1056,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								569,
+								578
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "ParseResponse.cpp",
+					"settings":
+					{
+						"buffer_size": 8188,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 3450.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "Strutil.h",
+					"settings":
+					{
+						"buffer_size": 586,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								548,
+								497
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"replace":
+	{
+		"height": 0.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"",
+				"HttpProcesser.cpp"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true
+}
