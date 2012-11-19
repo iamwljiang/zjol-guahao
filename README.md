@@ -1,4 +1,4 @@
-zjol-guahao
+guhao
 ===========
 
-针对guahao.zjol.com.cn进行自动挂号
+针对guahao.zjol.com.cn进行自动挂号,初步实现命令行自动挂号,可以用于封装库够图形界面程序使用
