@@ -24,40 +24,51 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
-#include <string>
-#include <vector>
-#ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
 
-#else
-#ifndef STRTOK
-#define STRTOK strtok_r
-#endif
-#endif
+#include "ssignal.h"
+#include <signal.h>
+unsigned int global_exit_flag = 0;
 
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
-#endif
+void init_signal() {
+	struct sigaction act;
+  	act.sa_handler = sig_handler;
+  	sigemptyset(&act.sa_mask);
+  	act.sa_flags = 0;
+  	if (sigaction(SIGHUP, &act, NULL)
+  	  || sigaction(SIGTERM, &act, NULL)
+  	  || sigaction(SIGINT, &act, NULL)
+  	  || sigaction(SIGABRT, &act, NULL))
+  		std::cerr << "sigaction failed" << std::endl;
+  	act.sa_handler = SIG_IGN;
+  	if (sigaction(SIGPIPE, &act, NULL))
+    	std::cerr << "sigaction failed" << std::endl;
 
+  	for (int k = 0; k < NSIG; k++) {
+    // 11--segmentation violation,
+    // 18--child status change,
+    // 20--window size change
+    // 13--write on a pipe with no one to read it
+    // other signals's meaning, please refer to "/usr/include/sys/signal.h"
+    	if (k == 11 || k == 18 || k == 20 || k == 28) {
+      		continue;
+    	} else if (k == 13 || k == 6) {
+      		continue;
+    	} else {
+    		signal(k, sig_handler);
+    	}
+  	}//end for
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
-
-int   debug_log(const char* fmt,...);
-
-char* get_current_time_line(char* buf,int buf_len);
-#ifdef __cplusplus
+  	return;
 }
-#endif	
 
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-#endif
+void sig_handler(int v) {
+	switch (v) {
+		case SIGTERM:
+		case SIGINT:
+		case SIGABRT:
+			global_exit_flag = 1; 
+			break;
+		default:
+    		break;
+  	}
+}

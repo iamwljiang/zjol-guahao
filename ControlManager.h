@@ -24,40 +24,75 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
+
+ #ifndef GUAHAO_CONTROLMANAGER_H_
+ #define GUAHAO_CONTROLMANAGER_H_
+
 #include <string>
-#include <vector>
-#ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
+#include <HttpProcesser.h>
+class CControlManager
+{
+public:
+	CControlManager();
 
-#else
-#ifndef STRTOK
-#define STRTOK strtok_r
+	~CControlManager();
+
+	//TODO:set signal function
+	int 	Init(const char* address,int port);
+
+	//only request once;interactive interface
+	int 	GetHositalList(void *out);
+
+	//when thread not start,this would request any time;interactive interface
+	int 	GetDepartListOfHospital(const std::string& hos_name, void *out);
+
+	//when thread not start,this would request any time;interactive interface
+	int 	GetDoctorListOfDepart(const std::string&   depart_name,void *out);
+
+	//set argument
+	void 	SetWeekday(const std::string& day);
+	
+	void 	SetLogfile(const std::string& run_log,const std::string& result_log);
+
+	//start threads
+	int 	Run(const std::string& hos,const std::string& dep,const std::string &doc);
+
+	//stop  threads and exit program
+	int 	Stop();
+
+private:
+	//forbidden copy and assign
+	CControlManager(const CControlManager& rhs);
+
+	CControlManager& operator=(const CControlManager& rhs);
+
+private:
+	//private function 
+
+	CHttpProcesser 		first_connection;
+private:
+	std::string 		server_address;
+
+	int 				server_port;
+
+	std::string 		hospital_name;
+
+	std::string 		department_name;
+
+	std::string	 		doctor_name;
+
+	std::string 		run_log_file;
+
+	std::string 		result_log_file;
+
+	std::string 		day;
+
+//初步使用boost thread启动线程,之后改成为多种模式
+#ifdef USE_BOOST_THREAD
+//	std::vector<boost::thread> thread_pool;
 #endif
-#endif
 
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
-#endif
+	static unsigned int	THREAD_NUMBER;//线程数
+};
 
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
-
-int   debug_log(const char* fmt,...);
-
-char* get_current_time_line(char* buf,int buf_len);
-#ifdef __cplusplus
-}
-#endif	
-
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-#endif
+#endif //GUAHAO_CONTROLMANAGER_H_

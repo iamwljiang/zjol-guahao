@@ -69,9 +69,8 @@ enum REQUEST_TYPE{
 //class CParseHtml;
 
 //NOTE:关于返回值
-//如果> 0表示内部不符合条件
 //如果= 0表示处理完成
-//如果< 0表示处理失败
+//如果< 0表示处理失败,或条件不符
 #ifdef APR
 class CHttpProcesser
 {
@@ -85,7 +84,7 @@ public:
 	void 			Run();
 public:
 	//设置socket参数并发起连接
-	int 			NewConnection();
+	int 			NewConnection(int block_flag = 1);
 	//处理活跃连接
 	int 			ProcessActive(int,const apr_pollfd_t*);
 	//剔除不活跃连接
@@ -127,7 +126,15 @@ public:
 	void 			Stop();
 
 	void 			Clear();
-private:
+
+	//执行一次用于获取hospital map
+	int 			RunOnceGetHosmap(void* out_map);
+
+	//执行一次用于获取department map
+	int 			RunOnceGetDepmap(const std::string& name,void* out_map);
+
+	//执行一次用于获取doctor map
+	int 			RunOnceGetDocmap(const std::string& name,void* out_map);
 	//只创建socket
 	apr_socket_t* 	make_socket();
 
@@ -157,10 +164,6 @@ private:
 
 	void 			set_visit_cookie(void * /*CRequestHeader* */);
 private:
-	char 			address[16];
-
-	int  			port;
-
 	/***************start 用户可设置数据 start********************/
 	std::string		user;     //登陆账号
 
@@ -193,6 +196,7 @@ private:
 
 	/***************connection*************************************/
 	//活跃连接管理
+	//TODO:其实可以用不map,用vector就可以
 	typedef std::map<apr_socket_t*,CLIENT_INFO*> MCMAP;
 	MCMAP 			manager_connections;
 	//等待连接管理
@@ -210,8 +214,9 @@ private:
 
 	bool			is_first_login;
 
-	int 			sum;
-
+	//新发起的连接数,包含等待连接和已连接,随新建连接和关闭连接进行动态变化
+	int 			new_connection_num; 
+public:
 	static int 		MAX_CONNECTION;
 };
 

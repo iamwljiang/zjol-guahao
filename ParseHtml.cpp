@@ -331,9 +331,7 @@
 									de.push_back(dei);
 									detail_map.insert(std::make_pair(doc_name,de));
 								}else{
-
 									iter->second.push_back(dei);
-
 								}
 							}
 							++i;

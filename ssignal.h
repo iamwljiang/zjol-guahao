@@ -24,40 +24,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
-#include <string>
-#include <vector>
-#ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
-
-#else
-#ifndef STRTOK
-#define STRTOK strtok_r
-#endif
-#endif
-
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
-#endif
 
 
+ #ifndef GUAHAO_SIMPLE_SIGNAL_H_
+ #define GUAHAO_SIMPLE_SIGNAL_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern unsigned int global_exit_flag;
 
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
+void init_signal();
+void sig_handler(int v);
 
-int   debug_log(const char* fmt,...);
-
-char* get_current_time_line(char* buf,int buf_len);
-#ifdef __cplusplus
-}
-#endif	
-
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-#endif
+ #endif //GUAHAO_SIMPLE_SIGNAL_H_

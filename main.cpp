@@ -26,12 +26,238 @@
  */
  
 #include "HttpProcesser.h"
+#include "ControlManager.h"
 #include <iostream>
+#include <sstream>
+//#include "DataType.h"
+#ifdef WIN32
+#include "gnu_getopt.h"
+#endif
 
-int main()
+#define V_0_1_1 "当前版本0.1.1 支持交互式多并发,支持数据压缩传输,不支持自动识别验证码"  
+
+static std::string user;
+static std::string passwd;
+static std::string want_hospital;
+static std::string want_department;
+static std::string want_doctor;
+static std::string want_week;
+
+static std::string log_file="guahao_info.txt";
+static std::string result_file="result.txt";
+
+void display(const std::string &rhs)
 {
+	std::cout << rhs << "\n";
+}
+
+void Usage(char **argv)
+{
+	std::ostringstream oss;
+	oss << "usage:\n" << argv[0] << " -u user -p password "
+		<< "[-a hospital [-b department [-c doctor] ] ] [-t weekday]\n"
+		<< argv[0] << " -h|-?|-v\n"
+		<< "-u user			用户名,需要在guahao.zjol.com.cn中注册过\n"
+		<< "-p passwd 		用户密码\n"
+		<< "-a hospital 		指定需要挂号的医院,可选\n"
+		<< "-b department   	指定需要挂号的科室,不为空的时候,必须-a也不为空\n"
+		<< "-c doctor  		指定需要挂号的医生,不为空的时候,必须-b也不为空\n"
+		<< "-t weekday 		用户指定需要预约的时间,从当天开始的7天,0-6代表礼拜天到礼拜礼拜六\n"
+		<< "-o logfile		用于指定运行log输出到目标文件,默认执行目录下的guahao_info.log\n"
+		<< "-r result		用于指定挂号成功信息的目标文件,默认执行目录下的result.txt\n"
+		<< "-v              	显示版本号,并提示当前版本支持的功能\n"
+		<< "-h,-?			显示帮助,有问题可联系iamwljiang@gmail\n";
+
+	std::cout << oss.str();	
+}
+
+
+int Start()
+{
+	//check argument
+	if(user.empty() || passwd.empty()){
+		return -1;
+	}
+
+	if(want_hospital.empty() && (!want_department.empty() || !want_doctor.empty())){
+		return -2;
+	}
+
+	if(want_department.empty() && !want_doctor.empty()){
+		return -3;
+	}
+
+	CControlManager control_manager;
+
+	if(control_manager.Init("guahao.zjol.com.cn",80) < 0){
+		return -4;
+	}
+
+	//interactive check
+	int error_count = 0;
+	//check hospital name 
+	HOSMAP hos_map;
+	HOSMAP::iterator hos_iter;
+	if(control_manager.GetHositalList(&hos_map) < 0){
+		return -5;
+	}
+
+	do{	
+		if(want_hospital.empty()){
+			//SHOW hospital name
+			std::cout << "Input you want to select hospital name:\n";
+			std::cin >> want_hospital;
+		}
+
+		hos_iter = hos_map.find(want_hospital);
+		if(hos_iter == hos_map.end()){
+			error_count += 1;
+			std::cout << "Hospital name invalid,select one name from follow\n";
+			//SHOW hospital name
+			want_hospital.clear();
+			std::cout << "Input:";
+			std::cin >> want_hospital;
+		}else{
+			std::cout << "Hospital name valid\n";
+		}
+
+		if(error_count > 3){
+			return -6;
+		}
+
+	}while(hos_iter == hos_map.end());
+	error_count = 0;
+
+	//check department name
+	DEPMAP depart_map;
+	DEPMAP::iterator depart_iter;
+	if(control_manager.GetDepartListOfHospital(want_hospital,&depart_map) < 0){
+		return -7;
+	}
+
+	do{
+		if(want_department.empty()){
+			//SHOW department name
+			std::cout << "Input you want to select department name:\n";
+			std::cin >> want_department;
+		}
+
+		depart_iter = depart_map.find(want_department);
+		if(depart_iter == depart_map.end()){
+			error_count += 1;
+			std::cout << "Department name invalid,select one name from follow\n";
+			//SHOW department name
+			want_department.clear();
+			std::cout << "Input:";
+			std::cin >> want_department;
+		}else{
+			std::cout << "department name valid\n";
+		}
+
+		if(error_count > 3){
+			return -6;
+		}
+	}while(depart_iter == depart_map.end());
+	error_count = 0;
+
+	//check doctor
+	DETMAP detail_map;
+	DETMAP::iterator det_iter;
+	if(control_manager.GetDoctorListOfDepart(want_department,&detail_map) < 0){
+		return -8;
+	}
+
+	do{
+		if(want_doctor.empty()){
+			//SHOW doctor name
+			std::cout << "Input you want to select doctor name:\n";
+			std::cin >> want_doctor;
+		}
+
+		det_iter = detail_map.find(want_doctor);
+		if(det_iter == detail_map.end()){
+			error_count += 1;
+			std::cout << "Doctor name invalid,select one name from follow\n";
+			//SHOW doctor name
+			want_doctor.clear();
+			std::cout << "Input:";
+			std::cin >> want_doctor;
+		}else{
+			std::cout << "doctor name valid\n";
+		}
+
+		if(error_count > 3){
+			return -6;
+		}
+	}while(det_iter == detail_map.end());
+
+	//set argument
+	control_manager.SetWeekday(want_week);
+	control_manager.SetLogfile(log_file,result_file);
+
+	//start threads
+	control_manager.Run(want_hospital,want_department,want_doctor);
+	return 0;
+}
+
+int main(int argc,char **argv)
+{
+	/*
 	CHttpProcesser processer;
 	processer.Init("guahao.zjol.com.cn",80);
 	processer.Run();
+	*/
+
+	const char* optstring = "u:p:a:b:c:t:o:r:vh?";
+	int ret = 0;
+	if(argc > 1){
+		while((ret = getopt(argc,argv,optstring)) != -1){
+			switch((char)ret){
+				case 'u':
+					user.assign(optarg);
+					break;
+				case 'p':
+					passwd.assign(optarg);
+					break;
+				case 'a':
+					want_hospital.assign(optarg);
+					break;
+				case 'b':
+					want_department.assign(optarg);
+					break;
+				case 'c':
+					want_doctor.assign(optarg);
+					break;
+				case 't':
+					want_week.assign(optarg);
+					break;
+				case 'o':
+					log_file.assign(optarg);
+					break;
+				case 'r':
+					result_file.assign(optarg);
+					break;
+				case 'v':
+					std::cout << V_0_1_1 << std::endl; 
+					return 0;
+				case 'h':
+				case '?':
+					Usage(argv);
+					return 0;
+				default:
+					Usage(argv);
+					return 1;
+			}
+		}
+	}else{
+		std::cout << "argument invalid use \"" << argv[0] << " -h\" get help\n";
+		return 1;
+	}
+
+	if((ret = Start()) < 0){
+		std::cout << "start error:" << ret << " use \"" << argv[0] << " -h\" get help\n";
+		return 2;
+	}
+
 	return 0;
 }

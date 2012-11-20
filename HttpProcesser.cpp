@@ -1,3 +1,30 @@
+/*
+ * Copyright (c) 2012, chlaws <iamwljiang at gmail.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "HttpProcesser.h"
 #include "ParseResponse.h"
 #include "RequestHeader.h"
@@ -5,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,19 +47,18 @@
 #define CHROME_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.94 Safari/537.4"
 
 #define LOG_TO_FILE(filename,data) std::ofstream out(filename); out << data ; out.close();
+#define LOG_APPEND_FILE(filename,data) std::ofstream out(filename,std::ios_base::out|std::ios_base::app); out << data ; out.close();
 #define LOG_SOCK_ERROR(rv,errstr) char buf[200];apr_strerror(rv,buf,sizeof(buf));printf("%s:%s\n",errstr,buf);
 
-typedef int (*PRINT_TYPE)(const char*,...);
-
-PRINT_TYPE LOG_DEBUG = debug_log;
+extern PRINT_TYPE LOG_DEBUG ;
 
 int CHttpProcesser::MAX_CONNECTION  = 1;
 CHttpProcesser::CHttpProcesser()
 {
-	apr_initialize();
+
 	is_first_login = true;
 	exit_flag = 0;
-	sum = 0;
+	new_connection_num = 0;
 	user = "350521197404071798";
 	password = "071798";
 	user_date_hospital = "浙二医院";
@@ -44,7 +71,7 @@ CHttpProcesser::CHttpProcesser()
 
 CHttpProcesser::~CHttpProcesser()
 {
-	apr_terminate();
+	
 }
 
 int	CHttpProcesser::Init(const char* addr,int port)
@@ -66,15 +93,12 @@ apr_socket_t* 	CHttpProcesser::make_socket()
 	if(APR_SUCCESS != apr_socket_create(&sock, APR_INET, SOCK_STREAM, 0, sub_pool))
 		return NULL;
 
-	//apr_socket_opt_set(sock,APR_SO_NONBLOCK,1);
-	apr_socket_opt_set(sock,APR_SO_KEEPALIVE,1);
-
 	return sock;
 }
 
-int CHttpProcesser::NewConnection()
+int CHttpProcesser::NewConnection(int block_flag)
 {
-	if(sum >= MAX_CONNECTION){
+	if(new_connection_num >= MAX_CONNECTION){
 		return 0;
 	}
 
@@ -85,6 +109,10 @@ int CHttpProcesser::NewConnection()
 		return -1;
 	}
 
+	if(!block_flag)
+		apr_socket_opt_set(sock,APR_SO_NONBLOCK,1);
+	apr_socket_opt_set(sock,APR_SO_KEEPALIVE,1);
+
 	apr_status_t rv = apr_socket_connect(sock,server_address);
 	if(rv == APR_SUCCESS){
 		//connection complete
@@ -92,13 +120,13 @@ int CHttpProcesser::NewConnection()
 		ci->current_request_type = BEGIN;
 		manager_connections.insert(std::make_pair(sock,ci));
 		add_socket_to_pollset(sock,APR_POLLIN,NULL);
-		sum +=1;
+		new_connection_num +=1;
 		LOG_DEBUG("NewConnection connected");
-	}else if (APR_STATUS_IS_EINPROGRESS(rv)){
+	}else if (APR_STATUS_IS_EINPROGRESS(rv)){//only non-block
 		//async connect,check again
 		add_socket_to_pollset(sock,APR_POLLIN|APR_POLLOUT,NULL);
 		wait_connections.insert(std::make_pair(sock,time(NULL)));
-		sum +=1;
+		new_connection_num +=1;
 		LOG_DEBUG("NewConnection socket interprocess,next check");
 	}else{
 		//TODO:log here
@@ -155,7 +183,7 @@ void	CHttpProcesser::close_connection(apr_socket_t* s ,CLIENT_INFO* ci)
 
 	apr_socket_close(s);
 	DEL(ci);
-	sum -= 1;
+	new_connection_num -= 1;
 	s = NULL;
 }
 int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
@@ -171,7 +199,7 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 			manager_connections.insert(std::make_pair(s,ci));
 			clear_socket_from_pollset(s,NULL);
 			add_socket_to_pollset(s,APR_POLLIN,NULL);
-			sum+=1;
+			new_connection_num+=1;
 			LOG_DEBUG("ProcessActive use pollin and pollout checked connected");
 		}else if(pfd[i].rtnevents & APR_POLLIN){
 			s = (apr_socket_t*)pfd[i].client_data;
@@ -242,7 +270,7 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 					ci->last_active_time     = time(NULL);
 					manager_connections.insert(std::make_pair(s,ci));
 					LOG_DEBUG("ProcessActive checked connection connected");
-					sum += 1;
+					new_connection_num += 1;
 				}
 			}
 		}else{
@@ -360,6 +388,200 @@ void 	CHttpProcesser::Run()
 	}//end while
 	//TODO:清理
 	Clear();
+}
+
+
+//执行一次用于获取hospital map
+int 			CHttpProcesser::RunOnceGetHosmap(void* out_map)
+{
+	int finish_flag = 0;
+	const apr_pollfd_t *pfd = NULL;
+	time_t last_time = time(NULL);
+	int    fail_interval = 10;
+	apr_interval_time_t wait_time = 5;
+	int 				active_num= 0;
+	do{
+		NewConnection(1);
+
+		MCMAP::iterator iter = manager_connections.begin();
+		MCMAP::iterator next_iter ;
+		for(; iter != manager_connections.end()/*map会变动*/; ){
+			next_iter = iter;
+			++next_iter;
+			if(iter->second->is_lock == 0){
+				iter->second->current_request_type = BEGIN;
+				RequestIndex(iter->first,iter->second);
+			}
+			iter = next_iter;
+		}
+
+		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
+			for(int i = 0; i < active_num; ++i){
+				apr_socket_t* s = (apr_socket_t*)pfd[i].client_data;
+				iter = manager_connections.find(s);
+				if(iter == manager_connections.end())
+					continue;
+				if(pfd[i].rtnevents | APR_POLLIN){
+					switch(iter->second->current_request_type){
+						case INDEX:
+							ProcessIndexResult(iter->first,iter->second);
+						default:
+							break;
+					}
+				}	
+			}
+		}
+
+		if(!hospital_map.empty()){
+			HOSMAP* ptr = (HOSMAP*)out_map;
+			std::copy(hospital_map.begin(),hospital_map.end(),std::inserter(*ptr,ptr->end()));
+			finish_flag = 1;
+		}
+
+		time_t now = time(NULL);
+		if(now - last_time > fail_interval){
+			break;
+		}
+
+	}while(!finish_flag);
+
+	return finish_flag == 0 ? -1 : 0;
+}
+
+//执行一次用于获取department map
+int 			CHttpProcesser::RunOnceGetDepmap(const std::string& name,void* out_map)
+{
+	int finish_flag = 0;
+	const apr_pollfd_t *pfd = NULL;
+	time_t last_time = time(NULL);
+	int    fail_interval = 10;
+	apr_interval_time_t wait_time = 5;
+	int 				active_num= 0;
+	if(hospital_map.empty()){
+		return -1;
+	}
+
+	HOSMAP::iterator iter = hospital_map.find(name);
+	if(iter == hospital_map.end()){
+		//输入的hospital name 不合法
+		return -2;
+	}
+
+	do{
+		NewConnection(1);
+
+		MCMAP::iterator iter = manager_connections.begin();
+		MCMAP::iterator next_iter ;
+		for(; iter != manager_connections.end()/*map会变动*/; ){
+			next_iter = iter;
+			++next_iter;
+			if(iter->second->is_lock == 0){
+				iter->second->current_request_type = LOGIN;
+				RequestHospital(iter->first,iter->second);
+			}
+			iter = next_iter;
+		}
+
+		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
+			for(int i = 0; i < active_num; ++i){
+				apr_socket_t* s = (apr_socket_t*)pfd[i].client_data;
+				iter = manager_connections.find(s);
+				if(iter == manager_connections.end())
+					continue;
+				if(pfd[i].rtnevents | APR_POLLIN){
+					switch(iter->second->current_request_type){
+						case HOS:
+							ProcessHospitalResult(iter->first,iter->second);
+						default:
+							break;
+					}
+				}	
+			}
+		}
+
+		if(!department_map.empty()){
+			DEPMAP* ptr = (DEPMAP*)out_map;
+			std::copy(department_map.begin(),department_map.end(),std::inserter(*ptr,ptr->end()));
+			finish_flag = 1;
+		}
+
+		time_t now = time(NULL);
+		if(now - last_time > fail_interval){
+			break;
+		}
+
+	}while(!finish_flag);
+
+	return finish_flag == 0 ? -3 : 0;
+}
+
+//执行一次用于获取doctor map
+int 			CHttpProcesser::RunOnceGetDocmap(const std::string& name,void* out_map)
+{
+	int finish_flag = 0;
+	const apr_pollfd_t *pfd = NULL;
+	time_t last_time = time(NULL);
+	int    fail_interval = 10;
+	apr_interval_time_t wait_time = 5;
+	int 				active_num= 0;
+
+	if(department_map.empty()){
+		return -1;
+	}
+
+	DEPMAP::iterator iter = department_map.find(name);
+	if(iter == department_map.end()){
+		//等待外部设置预约的医院在hospital_map中
+		return -2;
+	}
+
+	do{
+		NewConnection(1);
+
+		MCMAP::iterator iter = manager_connections.begin();
+		MCMAP::iterator next_iter ;
+		for(; iter != manager_connections.end()/*map会变动*/; ){
+			next_iter = iter;
+			++next_iter;
+			if(iter->second->is_lock == 0){
+				iter->second->current_request_type = HOS;
+				RequestDepartment(iter->first,iter->second);
+			
+			}
+			iter = next_iter;
+		}
+
+		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
+			for(int i = 0; i < active_num; ++i){
+				apr_socket_t* s = (apr_socket_t*)pfd[i].client_data;
+				iter = manager_connections.find(s);
+				if(iter == manager_connections.end())
+					continue;
+				if(pfd[i].rtnevents | APR_POLLIN){
+					switch(iter->second->current_request_type){
+						case DEPART:
+							ProcessDepartmentResult(iter->first,iter->second);
+						default:
+							break;
+					}
+				}	
+			}
+		}
+
+		if(!detail_doc_map.empty()){
+			DETMAP* ptr = (DETMAP*)out_map;
+			std::copy(detail_doc_map.begin(),detail_doc_map.end(),std::inserter(*ptr,ptr->end()));
+			finish_flag = 1;
+		}
+
+		time_t now = time(NULL);
+		if(now - last_time > fail_interval){
+			break;
+		}
+
+	}while(!finish_flag);
+
+	return finish_flag == 0 ? -3 : 0;
 }
 
 void CHttpProcesser::Clear()

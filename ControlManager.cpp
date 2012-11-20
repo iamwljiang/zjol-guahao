@@ -24,40 +24,89 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
-#include <string>
-#include <vector>
-#ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
 
-#else
-#ifndef STRTOK
-#define STRTOK strtok_r
-#endif
-#endif
+#include "ControlManager.h"
+#include "Strutil.h"
+unsigned int CControlManager::THREAD_NUMBER = 4;
+extern PRINT_TYPE LOG_DEBUG ;
 
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
-#endif
+CControlManager::CControlManager()
+{
+	server_address = "";
 
+	server_port = -1;
 
+	hospital_name = "";
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+	department_name = "";
 
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
+	doctor_name = "";
 
-int   debug_log(const char* fmt,...);
+	run_log_file = "";
 
-char* get_current_time_line(char* buf,int buf_len);
-#ifdef __cplusplus
+	result_log_file = "";
+
+	day = "";
+	apr_initialize();
 }
-#endif	
 
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-#endif
+
+CControlManager::~CControlManager()
+{
+	apr_terminate();
+}
+
+int CControlManager::Init(const char* address,int port)
+{
+
+	int r = 0;
+
+	if((r = first_connection.Init(address,port)) < 0){
+		LOG_DEBUG("CControlManager::Init init first connection error");
+		return r;
+	}
+
+	return 0;	
+}
+
+
+int CControlManager::GetHositalList(void *out)
+{
+	int rv = 0;
+	rv = first_connection.RunOnceGetHosmap(out);
+	return rv == 0 ? 0 : rv;
+}
+
+int CControlManager::GetDepartListOfHospital(const std::string& hos_name, void *out)
+{
+	int rv = 0;
+	rv = first_connection.RunOnceGetDepmap(hos_name,out);
+	return rv == 0 ? 0 : rv;
+}
+
+int CControlManager::GetDoctorListOfDepart(const std::string&   depart_name,void *out)
+{
+	int rv = 0;
+	rv = first_connection.RunOnceGetDocmap(depart_name,out);
+	return rv == 0 ? 0 : rv;
+}
+
+void CControlManager::SetWeekday(const std::string& day)
+{
+	
+}
+
+void CControlManager::SetLogfile(const std::string& run_log,const std::string& result_log)
+{
+	
+}
+
+int CControlManager::Run(const std::string& hos,const std::string& dep,const std::string &doc)
+{
+	return 0;
+}
+
+int CControlManager::Stop()
+{
+	return 0;
+}
