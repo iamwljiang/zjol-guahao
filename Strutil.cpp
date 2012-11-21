@@ -90,3 +90,26 @@ int debug_log(const char* fmt,...)
 
 	return 0;
 }
+
+
+int   strwtoi(const char* day)
+{
+	int nweekday = -1;
+	if(strcmp(day,"星期一") == 0){
+		nweekday = 1;
+	}else if(strcmp(day,"星期二") == 0){
+		nweekday = 2;
+	}else if(strcmp(day,"星期三") == 0){
+		nweekday = 3;
+	}else if(strcmp(day,"星期四") == 0){
+		nweekday = 4;
+	}else if(strcmp(day,"星期五") == 0){
+		nweekday = 5;
+	}else if(strcmp(day,"星期六") == 0){
+		nweekday = 6;
+	}else if(strcmp(day,"星期日") == 0){
+		nweekday = 0;
+	}
+
+	return nweekday;
+}

@@ -30,7 +30,6 @@
 *date  :2012-10-25
 *desc  :用于HTTP消息发送和接受
 *warn  :最好将socket部分抽取出来,在socket部分来支持apr,asio,libevent,nature socket
-*
 ***************************************/
 #ifndef GUAHAO_HTTPPROCESSER_H_
 #define GUAHAO_HTTPPROCESSER_H_
@@ -47,7 +46,8 @@
 #include "apr_time.h"
 #include "DataType.h"
 #include "ParseResponse.h"
-
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #define DEL(o) if(o){delete o;o=NULL;}
 
 #define RECV_LEN 1024*10
@@ -82,7 +82,21 @@ public:
 	int				Init(const char* addr,int port);
 
 	void 			Run();
+
+	//copy session,hospital_name,depart_name,doctor_name,date and the other things;
+	void			Clone(CHttpProcesser &rhs);
+
+	void 			SetDay(const std::string& day);
+
+	void 			SetDatename(const std::string& hos,const std::string& dep,const std::string& doc);
+#ifdef USE_BOOST_THREAD
+private:
+	boost::thread   proc_thread;
 public:
+	void 			start_thread();
+#endif
+
+public:	
 	//设置socket参数并发起连接
 	int 			NewConnection(int block_flag = 1);
 	//处理活跃连接
@@ -135,6 +149,9 @@ public:
 
 	//执行一次用于获取doctor map
 	int 			RunOnceGetDocmap(const std::string& name,void* out_map);
+
+	//登陆一次
+	int 			RunOnceTestLogin(const std::string& user,const std::string& passwd);
 	//只创建socket
 	apr_socket_t* 	make_socket();
 
@@ -175,6 +192,8 @@ private:
 	std::string 	user_date_department;//用户要预约的科室
 
 	std::string 	user_date_doctor;	 //用户要预约的医生
+
+	int 			nwant_day;			//需要预约到那天
 	/***************end 用户可设置数据 end**********************/
 
 	/***************start session 会话过程需要使用的数据*************/
@@ -212,7 +231,7 @@ private:
 
 	unsigned int	exit_flag;
 
-	bool			is_first_login;
+	int 			is_first_login;
 
 	//新发起的连接数,包含等待连接和已连接,随新建连接和关闭连接进行动态变化
 	int 			new_connection_num; 

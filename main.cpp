@@ -41,7 +41,7 @@ static std::string passwd;
 static std::string want_hospital;
 static std::string want_department;
 static std::string want_doctor;
-static std::string want_week;
+static std::string want_week="-1";
 
 static std::string log_file="guahao_info.txt";
 static std::string result_file="result.txt";
@@ -57,16 +57,16 @@ void Usage(char **argv)
 	oss << "usage:\n" << argv[0] << " -u user -p password "
 		<< "[-a hospital [-b department [-c doctor] ] ] [-t weekday]\n"
 		<< argv[0] << " -h|-?|-v\n"
-		<< "-u user			用户名,需要在guahao.zjol.com.cn中注册过\n"
-		<< "-p passwd 		用户密码\n"
-		<< "-a hospital 		指定需要挂号的医院,可选\n"
-		<< "-b department   	指定需要挂号的科室,不为空的时候,必须-a也不为空\n"
-		<< "-c doctor  		指定需要挂号的医生,不为空的时候,必须-b也不为空\n"
-		<< "-t weekday 		用户指定需要预约的时间,从当天开始的7天,0-6代表礼拜天到礼拜礼拜六\n"
-		<< "-o logfile		用于指定运行log输出到目标文件,默认执行目录下的guahao_info.log\n"
-		<< "-r result		用于指定挂号成功信息的目标文件,默认执行目录下的result.txt\n"
-		<< "-v              	显示版本号,并提示当前版本支持的功能\n"
-		<< "-h,-?			显示帮助,有问题可联系iamwljiang@gmail\n";
+		<< "-u user	        用户名,需要在guahao.zjol.com.cn中注册过\n"
+		<< "-p passwd       用户密码\n"
+		<< "-a hospital     指定需要挂号的医院,可选\n"
+		<< "-b department   指定需要挂号的科室,不为空的时候,必须-a也不为空\n"
+		<< "-c doctor       指定需要挂号的医生,不为空的时候,必须-b也不为空\n"
+		<< "-t weekday      用户指定需要一周内的预约时间,,0-6代表礼拜天到礼拜礼拜六,默认从最近有号的一天\n"
+		<< "-o logfile      用于指定运行log输出到目标文件,默认执行目录下的guahao_info.log\n"
+		<< "-r result       用于指定挂号成功信息的目标文件,默认执行目录下的result.txt\n"
+		<< "-v              显示版本号,并提示当前版本支持的功能\n"
+		<< "-h,-?           显示帮助,有问题可联系iamwljiang@gmail\n";
 
 	std::cout << oss.str();	
 }
@@ -94,6 +94,7 @@ int Start()
 	}
 
 	//interactive check
+
 	int error_count = 0;
 	//check hospital name 
 	HOSMAP hos_map;
@@ -102,9 +103,18 @@ int Start()
 		return -5;
 	}
 
+	if(control_manager.TestLogin(user,passwd) != 0){
+		return -5;
+	}
+
 	do{	
 		if(want_hospital.empty()){
-			//SHOW hospital name
+			
+			hos_iter = hos_map.begin();
+			for(; hos_iter != hos_map.end(); ++hos_iter){
+				std::cout << "医院:" << hos_iter->first << "\n";
+			}
+
 			std::cout << "Input you want to select hospital name:\n";
 			std::cin >> want_hospital;
 		}
@@ -113,7 +123,12 @@ int Start()
 		if(hos_iter == hos_map.end()){
 			error_count += 1;
 			std::cout << "Hospital name invalid,select one name from follow\n";
-			//SHOW hospital name
+			
+			hos_iter = hos_map.begin();
+			for(; hos_iter != hos_map.end(); ++hos_iter){
+				std::cout << "医院:" << hos_iter->first << "\n";
+			}
+
 			want_hospital.clear();
 			std::cout << "Input:";
 			std::cin >> want_hospital;
@@ -137,7 +152,12 @@ int Start()
 
 	do{
 		if(want_department.empty()){
-			//SHOW department name
+	
+			depart_iter = depart_map.begin();
+			for(; depart_iter != depart_map.end(); ++depart_iter){
+				std::cout << "科室:" << depart_iter->first << "\n";
+			}
+
 			std::cout << "Input you want to select department name:\n";
 			std::cin >> want_department;
 		}
@@ -146,7 +166,12 @@ int Start()
 		if(depart_iter == depart_map.end()){
 			error_count += 1;
 			std::cout << "Department name invalid,select one name from follow\n";
-			//SHOW department name
+			
+			depart_iter = depart_map.begin();
+			for(; depart_iter != depart_map.end(); ++depart_iter){
+				std::cout << "科室:" << depart_iter->first << "\n";
+			}
+
 			want_department.clear();
 			std::cout << "Input:";
 			std::cin >> want_department;
@@ -169,7 +194,10 @@ int Start()
 
 	do{
 		if(want_doctor.empty()){
-			//SHOW doctor name
+			det_iter = detail_map.begin();
+			for(; det_iter != detail_map.end(); ++det_iter){
+				std::cout << "医生:" << det_iter->first << "\n";
+			}
 			std::cout << "Input you want to select doctor name:\n";
 			std::cin >> want_doctor;
 		}
@@ -178,7 +206,12 @@ int Start()
 		if(det_iter == detail_map.end()){
 			error_count += 1;
 			std::cout << "Doctor name invalid,select one name from follow\n";
-			//SHOW doctor name
+			
+			det_iter = detail_map.begin();
+			for(; det_iter != detail_map.end(); ++det_iter){
+				std::cout << "医生:" << det_iter->first << "\n";
+			}
+
 			want_doctor.clear();
 			std::cout << "Input:";
 			std::cin >> want_doctor;
@@ -190,6 +223,7 @@ int Start()
 			return -6;
 		}
 	}while(det_iter == detail_map.end());
+
 
 	//set argument
 	control_manager.SetWeekday(want_week);

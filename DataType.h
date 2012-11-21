@@ -51,7 +51,9 @@ typedef struct _tag_DETAIL_DOC{
 	std::string content;//请求正文
 	std::string date;   //日期
 	std::string weekday;//星期几
+	int 		nweekday;//数字表示的礼拜几(0-6);
 	int			ampm;	//上午下午
+	int 		emptyflag;//空标志 0不空,1空
 	std::string cost;   //费用
 }DETAIL_INFO;
 

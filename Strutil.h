@@ -28,6 +28,11 @@
 #define GUAHAO_STRUTIL_H_
 #include <string>
 #include <vector>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef WIN32
 #ifndef STRTOK
 #define STRTOK strtok_s
@@ -43,21 +48,18 @@
 #define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
 #endif
 
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
 
 int   debug_log(const char* fmt,...);
 
 char* get_current_time_line(char* buf,int buf_len);
-#ifdef __cplusplus
-}
-#endif	
+
+int   strwtoi(const char* day);
 
 typedef int (*PRINT_TYPE)(const char*,...);
 extern PRINT_TYPE LOG_DEBUG;
+
+#ifdef __cplusplus
+}
+#endif	
 #endif

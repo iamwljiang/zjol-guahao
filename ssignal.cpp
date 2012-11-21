@@ -25,13 +25,51 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ssignal.h"
+#include <signal.h>
+#include <iostream>
+unsigned int global_exit_flag = 0;
 
- #ifndef GUAHAO_SIMPLE_SIGNAL_H_
- #define GUAHAO_SIMPLE_SIGNAL_H_
+void init_signal() {
+	struct sigaction act;
+  	act.sa_handler = sig_handler;
+  	sigemptyset(&act.sa_mask);
+  	act.sa_flags = 0;
+  	if (sigaction(SIGHUP, &act, NULL)
+  	  || sigaction(SIGTERM, &act, NULL)
+  	  || sigaction(SIGINT, &act, NULL)
+  	  || sigaction(SIGABRT, &act, NULL))
+  		std::cerr << "sigaction failed" << std::endl;
+  	act.sa_handler = SIG_IGN;
+  	if (sigaction(SIGPIPE, &act, NULL))
+    	std::cerr << "sigaction failed" << std::endl;
 
-extern unsigned int global_exit_flag;
+  	for (int k = 0; k < NSIG; k++) {
+    // 11--segmentation violation,
+    // 18--child status change,
+    // 20--window size change
+    // 13--write on a pipe with no one to read it
+    // other signals's meaning, please refer to "/usr/include/sys/signal.h"
+    	if (k == 11 || k == 18 || k == 20 || k == 28) {
+      		continue;
+    	} else if (k == 13 || k == 6) {
+      		continue;
+    	} else {
+    		signal(k, sig_handler);
+    	}
+  	}//end for
 
-void init_signal();
-void sig_handler(int v);
+  	return;
+}
 
- #endif //GUAHAO_SIMPLE_SIGNAL_H_
+void sig_handler(int v) {
+	switch (v) {
+		case SIGTERM:
+		case SIGINT:
+		case SIGABRT:
+			global_exit_flag = 1; 
+			break;
+		default:
+    		break;
+  	}
+}

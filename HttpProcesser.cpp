@@ -41,6 +41,11 @@
 #include "Urlcode.h"
 #include "Strutil.h"
 #include <algorithm>
+
+#ifdef USE_BOOST_THREAD
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#endif
 #ifdef APR
 
 #define IE_USER_AGENT "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)"
@@ -56,17 +61,15 @@ int CHttpProcesser::MAX_CONNECTION  = 1;
 CHttpProcesser::CHttpProcesser()
 {
 
-	is_first_login = true;
+	is_first_login = 1;
 	exit_flag = 0;
 	new_connection_num = 0;
-	user = "350521197404071798";
-	password = "071798";
-	user_date_hospital = "浙二医院";
-	//user_date_department = "内分泌科";
-	//user_date_doctor   = "王永健";
-	user_date_department = "外科";
-	user_date_doctor   = "徐斌";
+	user.clear();
+	password.clear();
+	user_date_department.clear();
+	user_date_doctor.clear();
 	memset(verify_login_image,0,255);
+	nwant_day = -1;
 }
 
 CHttpProcesser::~CHttpProcesser()
@@ -319,6 +322,40 @@ int 	CHttpProcesser::ProcessNotActive(int interval_time)
 	return 0;
 }
 
+#ifdef USE_BOOST_THREAD
+void 	CHttpProcesser::start_thread()
+{
+	proc_thread = boost::thread(boost::bind(&CHttpProcesser::Run,this));
+}
+#endif
+
+void 	CHttpProcesser::SetDay(const std::string& day)
+{
+	nwant_day = atoi(day.c_str());
+}
+
+void	CHttpProcesser::Clone(CHttpProcesser &rhs)
+{
+	session_cookies = rhs.session_cookies;
+	user_date_hospital = rhs.user_date_hospital;
+	user_date_department = rhs.user_date_department;
+	user_date_doctor = rhs.user_date_doctor;
+	user_id = rhs.user_id;
+	strcpy(verify_login_image,rhs.verify_login_image);
+	std::copy(rhs.hospital_map.begin(),rhs.hospital_map.end(),std::inserter(hospital_map,hospital_map.end()));
+	std::copy(rhs.department_map.begin(),rhs.department_map.end(),std::inserter(department_map,department_map.end()));
+	nwant_day = rhs.nwant_day;
+	if(!user_id.empty())
+		is_first_login = 0;
+}
+
+void 	CHttpProcesser::SetDatename(const std::string& hos,const std::string& dep,const std::string& doc)
+{
+	this->user_date_hospital = hos;
+	this->user_date_department = dep;
+	this->user_date_doctor = doc;
+}
+
 void 	CHttpProcesser::Run()
 {
 	apr_interval_time_t wait_time = 30;
@@ -331,7 +368,7 @@ void 	CHttpProcesser::Run()
 	const apr_pollfd_t 		*pfd      = NULL;
 	while(!apr_atomic_read32(&exit_flag)){
 		
-		NewConnection();
+		NewConnection(1);
 		
 		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
 
@@ -346,6 +383,9 @@ void 	CHttpProcesser::Run()
 			//TODO:可以通过type确定调用哪个函数,而不用每个函数都调用一次
 			//还需要保证迭代器删除的时候,不影响下后续迭代器移动
 			if(iter->second->is_lock == 0){
+				if(!is_first_login && iter->second->current_request_type == BEGIN){
+					iter->second->current_request_type = HOS;
+				}
 				LOG_DEBUG("CHttpProcesser::Run connection manager size:%d",manager_connections.size());
 				switch(iter->second->current_request_type){
 					case BEGIN:
@@ -466,6 +506,8 @@ int 			CHttpProcesser::RunOnceGetDepmap(const std::string& name,void* out_map)
 		//输入的hospital name 不合法
 		return -2;
 	}
+	
+	user_date_hospital = name;
 
 	do{
 		NewConnection(1);
@@ -535,6 +577,7 @@ int 			CHttpProcesser::RunOnceGetDocmap(const std::string& name,void* out_map)
 		return -2;
 	}
 
+	user_date_department = name;
 	do{
 		NewConnection(1);
 
@@ -583,6 +626,74 @@ int 			CHttpProcesser::RunOnceGetDocmap(const std::string& name,void* out_map)
 
 	return finish_flag == 0 ? -3 : 0;
 }
+
+int  CHttpProcesser::RunOnceTestLogin(const std::string& user,const std::string& passwd)
+{
+	int finish_flag = 0;
+	const apr_pollfd_t *pfd = NULL;
+	time_t last_time = time(NULL);
+	int    fail_interval = 10;
+	apr_interval_time_t wait_time = 5;
+	int 				active_num= 0;
+
+	if(user.empty() || passwd.empty()){
+		return -1;
+	}
+	this->user= user;
+	this->password = passwd;
+
+	int type = INDEX;
+	do{
+		NewConnection(1);
+
+		MCMAP::iterator iter = manager_connections.begin();
+		MCMAP::iterator next_iter ;
+		for(; iter != manager_connections.end()/*map会变动*/; ){
+			next_iter = iter;
+			++next_iter;
+			if(iter->second->is_lock == 0){
+				//回滚type
+				if(type > VERIA )type = INDEX;
+				iter->second->current_request_type = type++;
+				RequestLogin(iter->first,iter->second);
+			}
+			iter = next_iter;
+		}
+
+		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
+			for(int i = 0; i < active_num; ++i){
+				apr_socket_t* s = (apr_socket_t*)pfd[i].client_data;
+				iter = manager_connections.find(s);
+				if(iter == manager_connections.end())
+					continue;
+				if(pfd[i].rtnevents | APR_POLLIN){
+					switch(iter->second->current_request_type){
+						case VERIA:
+							ProcessVerifyResult(iter->first,iter->second);
+							break;
+						case LOGIN:
+							ProcessLoginResult(iter->first,iter->second);
+							break;
+						default:
+							break;
+					}
+				}	
+			}
+		}
+
+		if(!user_id.empty()){
+			finish_flag = 1;
+		}
+
+		time_t now = time(NULL);
+		if(now - last_time > fail_interval){
+			break;
+		}
+
+	}while(!finish_flag);
+	return 0;
+}
+
 
 void CHttpProcesser::Clear()
 {
@@ -1315,23 +1426,46 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 
 	DETMAP::iterator doc_iter = detail_doc_map.find(user_date_doctor);
 	if(doc_iter == detail_doc_map.end()){
-		//暂时抽取第一个医生
-		doc_iter = detail_doc_map.begin();
+		//ci->is_lock = 0;
+		//ci->current_request_type = 	DEPART;
+		//if doctor name not valid exit,because we checked at start
+		exit(1);
+	}
+
+	std::vector<DETAIL_INFO>::iterator info_iter = doc_iter->second.begin();
+	std::vector<DETAIL_INFO>::iterator info_end = doc_iter->second.end();
+	//找指定日期
+	for(; info_iter != info_end; ++info_iter){
+		if(!info_iter->emptyflag ){
+			if(nwant_day >= 0){
+				if(info_iter->nweekday == nwant_day){
+					break;
+				}
+			}else{
+				break;
+			}
+		}
+	}
+	
+	if(info_iter == info_end){
+		ci->is_lock = 0;
+		ci->current_request_type = 	HOS;
+		return -3;
 	}
 	
 	oss.str("");
-	oss << strlen("sg=")+doc_iter->second.at(0).content.size();
+	oss << strlen("sg=")+info_iter->content.size();
 	rh.SetHeaderField("Content-Length",oss.str());
 
 	oss.str("");
-	oss << "sg=" << doc_iter->second.at(0).content;
+	oss << "sg=" << info_iter->content;
 	rh.SetContent(oss.str());
 
 	std::string req_header = rh.GetRequest();
 	if(req_header.empty()){
 		LOG_DEBUG("RequestDoctor http header is empty,close connection");
 		close_connection(s,ci);
-		return -3;
+		return -4;
 	}	
 
 	LOG_DEBUG("RequestDoctor request http header:\n%s",req_header.c_str());
@@ -1344,7 +1478,7 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 		ci->last_active_time = time(NULL);
 	}else{
 		close_connection(s,ci);
-		return -4;
+		return -5;
 	}
 
 	return 0;
@@ -1621,7 +1755,8 @@ int	CHttpProcesser::ProcessLoginResult(apr_socket_t* s,CLIENT_INFO* ci)
 			LOG_DEBUG("ProcessLoginResult response content is empty,set request type to VERIA");
 			return -2;
 		}
-
+		
+		LOG_DEBUG("请求登陆的响应正文:%s\n",res_content.c_str());
 		if(strncmp(res_content.c_str(),"OK",2) != 0 || std::string::npos != res_content.find("验证码已过期")){
 			//登陆失败,重新请求验证码
 			ci->is_lock = 0;
@@ -1631,7 +1766,6 @@ int	CHttpProcesser::ProcessLoginResult(apr_socket_t* s,CLIENT_INFO* ci)
 			return -3;
 		}
 
-		LOG_DEBUG("请求登陆的响应正文:%s\n",res_content.c_str());
 		memset(ci->res_data,0,ci->res_len);
 		memcpy(ci->res_data,res_content.c_str(),res_content.size());
 		
@@ -1642,8 +1776,12 @@ int	CHttpProcesser::ProcessLoginResult(apr_socket_t* s,CLIENT_INFO* ci)
 		//TODO:解析响应成功的正文
 		std::vector<std::string> items;
 		split(res_content.c_str(),items,"|");
-		if(items.size() >= 2){
+		if(items.size() == 2){
 			user_id = items.at(1) ;
+			is_first_login = 0;
+		}else{
+			LOG_DEBUG("ProcessLoginResult login failed,can't find user id");
+			exit(1);
 		} 
 
 	}else{

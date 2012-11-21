@@ -49,6 +49,8 @@ public:
 	//when thread not start,this would request any time;interactive interface
 	int 	GetDoctorListOfDepart(const std::string&   depart_name,void *out);
 
+	int 	TestLogin(const std::string& user,const std::string& passwd);
+
 	//set argument
 	void 	SetWeekday(const std::string& day);
 	
@@ -88,9 +90,7 @@ private:
 	std::string 		day;
 
 //初步使用boost thread启动线程,之后改成为多种模式
-#ifdef USE_BOOST_THREAD
-//	std::vector<boost::thread> thread_pool;
-#endif
+	std::vector<CHttpProcesser*> thread_pools;
 
 	static unsigned int	THREAD_NUMBER;//线程数
 };

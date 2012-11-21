@@ -295,8 +295,11 @@
 							find_item(doc_items.at(6),">","<",0,doc_name);
 							find_item(doc_items.at(6),">","<",-1,doc_level);
 							//std::cout << "doc:" << doc_name << std::endl; 
-						}else{
+						}else if(doc_items.size() == 5){
 							find_item(doc_items.at(4),">","<",0,doc_name);
+						}else{
+							//暂无医生排班
+							return detail_map;
 						}
 						//TODO:考虑在这里去除名字中任意位置的空格
 						int inx = 0;
@@ -306,37 +309,41 @@
 								break;
 							}
 
+							//不管是否有号,都先将时间做出来
+							DETAIL_INFO dei;
+							std::vector<std::string> date_items;
+							int date_inx = inx / 2;
+							std::string date = "";
+							date.assign(  date_vec.at(date_inx).c_str());
+							split((char*)date.c_str(),date_items," ");
+							dei.date    = date_items.at(0);
+							dei.weekday = date_items.at(1);
+							dei.nweekday = strwtoi(dei.weekday.c_str());
+							dei.ampm    = inx % 2;
+							
 							//存在号源
 							if(lines.at(i).size() > 60){
 								std::vector<std::string> items;
 								split((char*)lines.at(i).c_str(),items,",':");
-
-								DETAIL_INFO dei;
 								dei.content = items.at(2);
-								dei.ampm    = inx % 2;
 								find_item((char*)items.at(9).c_str(),NULL,"(",0,dei.cost);
-
-								std::vector<std::string> date_items;
-								int date_inx = inx / 2;
-								std::string date = "";
-								date.assign(  date_vec.at(date_inx).c_str());
-								split((char*)date.c_str(),date_items," ");
-								dei.date    = date_items.at(0);
-								dei.weekday = date_items.at(1);
 								
-								DETMAP::iterator iter = detail_map.find(doc_name);	
-								if(iter == detail_map.end()){
-									std::vector<DETAIL_INFO> de;
+								dei.emptyflag = 0;
+							}else{
+								dei.emptyflag = 1;
+							}
 
-									de.push_back(dei);
-									detail_map.insert(std::make_pair(doc_name,de));
-								}else{
-									iter->second.push_back(dei);
-								}
+							DETMAP::iterator iter = detail_map.find(doc_name);	
+							if(iter == detail_map.end()){
+								std::vector<DETAIL_INFO> de;
+
+								de.push_back(dei);
+								detail_map.insert(std::make_pair(doc_name,de));
+							}else{
+								iter->second.push_back(dei);
 							}
 							++i;
 							++inx;
-
 						}
 					}else{
 						break;
