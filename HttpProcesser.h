@@ -74,6 +74,7 @@ enum REQUEST_TYPE{
 #ifdef APR
 class CHttpProcesser
 {
+
 public:
 	CHttpProcesser();
 	
@@ -83,12 +84,13 @@ public:
 
 	void 			Run();
 
-	//copy session,hospital_name,depart_name,doctor_name,date and the other things;
+	//用来克隆第一个CHttpProcesser 对象内部的一些数据
 	void			Clone(CHttpProcesser &rhs);
 
 	void 			SetDay(const std::string& day);
 
 	void 			SetDatename(const std::string& hos,const std::string& dep,const std::string& doc);
+
 #ifdef USE_BOOST_THREAD
 private:
 	boost::thread   proc_thread;
@@ -103,6 +105,14 @@ public:
 	int 			ProcessActive(int,const apr_pollfd_t*);
 	//剔除不活跃连接
 	int 			ProcessNotActive(int interval_time);
+
+	//结束运行
+	void 			Stop();
+
+	void 			Clear();
+
+	//----------------start 发起http请求------------------------------
+
 	//请求首页
 	int				RequestIndex(apr_socket_t* s,CLIENT_INFO* ci);
 	//后期改成登陆一次
@@ -119,7 +129,9 @@ public:
 	int 			RequestDialogbJS(apr_socket_t* s,CLIENT_INFO* ci);
 	//组织最终的预约请求
 	int				RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci);
-	
+	//-------------end 发起http请求------------------------------
+
+	//----------------start 处理http响应--------------------------
 	//处理首页
 	int 			ProcessIndexResult(apr_socket_t* s,CLIENT_INFO* ci);
 	//处理验证码
@@ -136,11 +148,10 @@ public:
 	int 			ProcessDialogbJSResult(apr_socket_t* s,CLIENT_INFO* ci);
 
 	int				ProcessConfirmResult(apr_socket_t *s,CLIENT_INFO* ci);
-	//结束运行
-	void 			Stop();
+	//----------------end 处理http响应--------------------------
 
-	void 			Clear();
 
+	//----------------start 用于外部交互,使用户选择医院,科室,医生-----------------------------
 	//执行一次用于获取hospital map
 	int 			RunOnceGetHosmap(void* out_map);
 
@@ -152,6 +163,13 @@ public:
 
 	//登陆一次
 	int 			RunOnceTestLogin(const std::string& user,const std::string& passwd);
+	//----------------end 用于外部交互,使用户选择医院,科室,医生-----------------------------
+
+private:
+	//----------------start 内部私有函数----------------------------------------------------	
+	
+	//----------------start 底层网络方面----------------------------------------------------
+	//TODO:如果非阻塞需要分段接受数据
 	//只创建socket
 	apr_socket_t* 	make_socket();
 
@@ -164,7 +182,20 @@ public:
 	char* 			recv_data(apr_socket_t* s,int *result_len);
 
 	bool 			send_data(apr_socket_t* s,const char* data,int len);
+	
+	//用于封装recv_data
+	int 			read_data(apr_socket_t* s ,CLIENT_INFO* ci);
+	//----------------end  底层网络方面----------------------------------------------------
 
+	//TODO:支持windows,有可能的话实现自动识别验证码
+	//导出图片数据并从输入流中读取验证码结果
+	int 			use_feh_read_verify_code(const char *img,int len,char *result);
+
+	//在cookie中设置访问时间
+	void 			set_visit_cookie(void * /*CRequestHeader* */);
+
+	//----------------start chunk 解析--------------------
+	//判断头部是否指出了数据部分被chunk
 	int 			has_chunk(const char *data);
 
 	//初步通过read_chunk读取剩余数据,直到读取完成
@@ -172,14 +203,10 @@ public:
 
 	//解析不完整的chunk段,可能有多个chunk组成
 	int 			parse_chunk(char *chunk,int chunk_len,int last_chunk_len,char *save,int *save_pos);
+	//-----------------end chunk 解析--------------------
 
-	//用于封装recv_data
-	int 			read_data(apr_socket_t* s ,CLIENT_INFO* ci);
+	//----------------end 内部私有函数----------------------------------------------------	
 
-	//导出图片数据并从输入流中读取验证码结果
-	int 			use_feh_read_verify_code(const char *img,int len,char *result);
-
-	void 			set_visit_cookie(void * /*CRequestHeader* */);
 private:
 	/***************start 用户可设置数据 start********************/
 	std::string		user;     //登陆账号

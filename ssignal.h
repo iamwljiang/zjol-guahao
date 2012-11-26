@@ -28,10 +28,14 @@
 
  #ifndef GUAHAO_SIMPLE_SIGNAL_H_
  #define GUAHAO_SIMPLE_SIGNAL_H_
+#include <boost/function.hpp>
+extern boost::function0<void> console_ctrl_function;
 
-extern unsigned int global_exit_flag;
-
+#ifndef WIN32
 void init_signal();
 void sig_handler(int v);
+#else
+BOOL WINAPI console_ctrl_handler(DWORD ctrl_type);
+#endif
 
  #endif //GUAHAO_SIMPLE_SIGNAL_H_

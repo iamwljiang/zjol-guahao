@@ -48,15 +48,19 @@
 #endif
 #ifdef APR
 
+#include "KmMutex.h"
+
 #define IE_USER_AGENT "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)"
 #define CHROME_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.94 Safari/537.4"
-
+#define FIREFOX_USER_AGENT "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.8) Gecko/20121012 Firefox/10.0.8"
 #define LOG_TO_FILE(filename,data) std::ofstream out(filename); out << data ; out.close();
 #define LOG_APPEND_FILE(filename,data) std::ofstream out(filename,std::ios_base::out|std::ios_base::app); out << data ; out.close();
 #define LOG_SOCK_ERROR(rv,errstr) char buf[200];apr_strerror(rv,buf,sizeof(buf));printf("%s:%s\n",errstr,buf);
 
-extern PRINT_TYPE LOG_DEBUG ;
-
+//extern PRINT_TYPE LOG_DEBUG ;
+extern Logger run_logger;
+extern Logger result_logger;
+static KmMutex proc_mutex;
 int CHttpProcesser::MAX_CONNECTION  = 1;
 CHttpProcesser::CHttpProcesser()
 {
@@ -74,7 +78,7 @@ CHttpProcesser::CHttpProcesser()
 
 CHttpProcesser::~CHttpProcesser()
 {
-	
+	Clear();
 }
 
 int	CHttpProcesser::Init(const char* addr,int port)
@@ -108,7 +112,7 @@ int CHttpProcesser::NewConnection(int block_flag)
 	apr_socket_t *sock = make_socket();
 	if(sock == NULL){
 		//TODO:log here
-		LOG_DEBUG("make socket error");
+		run_logger.error("make socket error");
 		return -1;
 	}
 
@@ -124,16 +128,16 @@ int CHttpProcesser::NewConnection(int block_flag)
 		manager_connections.insert(std::make_pair(sock,ci));
 		add_socket_to_pollset(sock,APR_POLLIN,NULL);
 		new_connection_num +=1;
-		LOG_DEBUG("NewConnection connected");
+		run_logger.debug("NewConnection connected");
 	}else if (APR_STATUS_IS_EINPROGRESS(rv)){//only non-block
 		//async connect,check again
 		add_socket_to_pollset(sock,APR_POLLIN|APR_POLLOUT,NULL);
 		wait_connections.insert(std::make_pair(sock,time(NULL)));
 		new_connection_num +=1;
-		LOG_DEBUG("NewConnection socket interprocess,next check");
+		run_logger.debug("NewConnection socket interprocess,next check");
 	}else{
 		//TODO:log here
-		LOG_DEBUG("NewConnection can't connect,close socket");
+		run_logger.debug("NewConnection can't connect,close socket");
 		apr_socket_close(sock);
 		return -2;
 	}
@@ -175,10 +179,10 @@ int 	CHttpProcesser::clear_socket_from_pollset(apr_socket_t* s,void *data)
 
 void	CHttpProcesser::close_connection(apr_socket_t* s ,CLIENT_INFO* ci)
 {
-	LOG_DEBUG("close_connection called");
+	run_logger.debug("close_connection called");
 	MCMAP::iterator iter = manager_connections.find(s);
 	if(iter != manager_connections.end()){
-		ci == iter->second ? ci : iter->second;
+		//ci == iter->second ? ci : iter->second;
 		manager_connections.erase(iter);
 	}
 
@@ -203,18 +207,15 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 			clear_socket_from_pollset(s,NULL);
 			add_socket_to_pollset(s,APR_POLLIN,NULL);
 			new_connection_num+=1;
-			LOG_DEBUG("ProcessActive use pollin and pollout checked connected");
+			run_logger.warn("ProcessActive use pollin and pollout checked connected");
 		}else if(pfd[i].rtnevents & APR_POLLIN){
 			s = (apr_socket_t*)pfd[i].client_data;
-			LOG_DEBUG("ProcessActive socket have data need read,socket is %s,sock addr:%p,map size:%d"\
+			run_logger.debug("ProcessActive socket have data need read,socket is %s,sock addr:%p,map size:%d"\
 				,s == NULL? "null" : "not null",s,manager_connections.size());
 			MCMAP::iterator iter = manager_connections.find(s);
 			if(iter != manager_connections.end()){
-				//NOTE:在处理函数借正确结束时才解锁
-				//iter->second->is_lock = 0;
-				//iter->second->last_active_time = time(NULL);
 
-				LOG_DEBUG("ProcessActive response type:%d",iter->second->current_request_type);
+				run_logger.debug("ProcessActive response type:%d",iter->second->current_request_type);
 				int ret = 0;
 				switch(iter->second->current_request_type){
 					case INDEX:
@@ -246,10 +247,10 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 						break;
 				}//end switch
 				if(ret < 0){
-					LOG_DEBUG("ProcessActive call process error,ret:%d",ret);
+					run_logger.error("ProcessActive call process error,ret:%d",ret);
 				}
 			}else{
-				LOG_DEBUG("ProcessActive can't find socket from connection manager");
+				run_logger.error("ProcessActive can't find socket from connection manager");
 				exit(1);
 			}
 			//end if
@@ -272,13 +273,13 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 					ci->current_request_type = BEGIN;
 					ci->last_active_time     = time(NULL);
 					manager_connections.insert(std::make_pair(s,ci));
-					LOG_DEBUG("ProcessActive checked connection connected");
+					run_logger.debug("ProcessActive checked connection connected");
 					new_connection_num += 1;
 				}
 			}
 		}else{
 			//LOG here
-			LOG_DEBUG("unkown event:%d",pfd[i].rtnevents);
+			run_logger.debug("unkown event:%d",pfd[i].rtnevents);
 			continue;
 		}
 	}//end for
@@ -298,7 +299,7 @@ int 	CHttpProcesser::ProcessNotActive(int interval_time)
 			next_iter = conn_iter;
 			++next_iter;
 			if(now - conn_iter->second->last_active_time > interval_time){
-				LOG_DEBUG("find connection but not active,close it");
+				run_logger.warn("find connection but not active,close it");
 				close_connection(conn_iter->first,conn_iter->second);
 			}
 			conn_iter = next_iter;
@@ -312,7 +313,7 @@ int 	CHttpProcesser::ProcessNotActive(int interval_time)
 		time_t now = time(NULL);
 		for(; wait_iter != wait_end; ++wait_end){
 			if(now - wait_iter->second > interval_time){
-				LOG_DEBUG("find wait_connection not active,close it");
+				run_logger.warn("find wait_connection not active,close it");
 				apr_socket_close(wait_iter->first);
 			}
 		}
@@ -371,7 +372,6 @@ void 	CHttpProcesser::Run()
 		NewConnection(1);
 		
 		if(APR_SUCCESS == apr_pollset_poll(pollset,wait_time,&active_num,&pfd)){
-
 			ProcessActive(active_num,pfd);
 		}
 
@@ -380,13 +380,13 @@ void 	CHttpProcesser::Run()
 		for(; iter != manager_connections.end()/*map会变动*/; ){
 			next_iter = iter;
 			++next_iter;
-			//TODO:可以通过type确定调用哪个函数,而不用每个函数都调用一次
-			//还需要保证迭代器删除的时候,不影响下后续迭代器移动
+			
 			if(iter->second->is_lock == 0){
+				//如果已经登录过那么获取到了hos info 和depart info则直接将新请求的request type定位到HOS
 				if(!is_first_login && iter->second->current_request_type == BEGIN){
 					iter->second->current_request_type = HOS;
 				}
-				LOG_DEBUG("CHttpProcesser::Run connection manager size:%d",manager_connections.size());
+				//run_logger.debug("CHttpProcesser::Run connection manager size:%d",manager_connections.size());
 				switch(iter->second->current_request_type){
 					case BEGIN:
 						RequestIndex(iter->first,iter->second);
@@ -704,7 +704,9 @@ void CHttpProcesser::Clear()
 		for(; conn_iter != conn_end; ){
 			next_iter = conn_iter;
 			++next_iter;
-			close_connection(conn_iter->first,conn_iter->second);
+			//close_connection(conn_iter->first,conn_iter->second);
+			//apr_socket_close(conn_iter->first);
+			DEL(conn_iter->second);
 			conn_iter = next_iter;
 		}
 		manager_connections.clear();
@@ -755,6 +757,10 @@ char*	CHttpProcesser::recv_data(apr_socket_t* s,int* result_len)
 	size_t current_recv_len = 0;
 	size_t total_buffer_len = RECV_LEN;
 	char * buffer = (char*)apr_pcalloc(sub_pool,total_buffer_len);
+	if(buffer == NULL){
+		run_logger.error("alloc buffer error");
+		return NULL; 
+	}
 	int    mix = 1;//buffer 增长基数
 
 	do{
@@ -786,6 +792,10 @@ char*	CHttpProcesser::recv_data(apr_socket_t* s,int* result_len)
 			mix = mix << 1;
 			total_buffer_len = total_buffer_len * mix;
 			char *temp_buf = (char*)apr_pcalloc(sub_pool,total_buffer_len);
+			if(temp_buf == NULL){
+				run_logger.error("alloc buffer error");
+				return NULL; 
+			}
 			memcpy(temp_buf,buffer,recv_len);
 			buffer = temp_buf;
 		}
@@ -852,19 +862,19 @@ int 	CHttpProcesser::read_data(apr_socket_t* s ,CLIENT_INFO* ci)
 	int recv_len;
 	char * recv_buffer = recv_data(s,&recv_len);
 	if(recv_buffer == NULL){
-		LOG_DEBUG("CHttpProcesser::read_data recv_buffer == NULL");
+		run_logger.warn("CHttpProcesser::read_data recv_buffer == NULL");
 		close_connection(s,ci);
 		return -1;
 	}
 
 	int rv = has_chunk(recv_buffer);
 	if(rv < 0){
-		LOG_DEBUG("CHttpProcesser::read_data has_chunk < 0");
+		run_logger.warn("CHttpProcesser::read_data has_chunk < 0");
 		close_connection(s,ci);
 		return -2;
 	}else if(rv > 0){
 		if(read_chunk(s,recv_buffer,recv_len,&ci->res_data,&ci->res_len) < 0){
-			LOG_DEBUG("CHttpProcesser::read_data read_chunk < 0");
+			run_logger.warn("CHttpProcesser::read_data read_chunk < 0");
 			close_connection(s,ci);
 			return -3;
 		}
@@ -969,6 +979,10 @@ int 	CHttpProcesser::read_chunk(apr_socket_t* s,char *fsrc,int flen,char **data,
 	int data_total_len = flen * 2;
 	int data_current_len = header_end - fsrc + 4; 
 	*data = (char*)apr_pcalloc(sub_pool,data_total_len);
+	if(data == NULL){
+		run_logger.error("alloc buffer error");
+		return -11;
+	}
 	memcpy(*data,fsrc,data_current_len);
 
 	//chunk头开始位置
@@ -987,8 +1001,12 @@ int 	CHttpProcesser::read_chunk(apr_socket_t* s,char *fsrc,int flen,char **data,
 
 		if(recv_len + data_current_len > data_total_len - 1){
 				//按当前总量的1.5倍进行增长
-				data_total_len = static_cast<int> ((recv_len + data_current_len) * 1.5);
+				data_total_len = (recv_len + data_current_len) * 3 / 2;
 				char *temp_buf = (char*)apr_pcalloc(sub_pool,data_total_len);
+				if(temp_buf == NULL){
+					run_logger.error("alloc buffer error");
+					return -11;
+				}
 				memcpy(temp_buf,*data,data_current_len);
 				*data = temp_buf;
 		}
@@ -1002,7 +1020,7 @@ int 	CHttpProcesser::read_chunk(apr_socket_t* s,char *fsrc,int flen,char **data,
 
 int 	CHttpProcesser::use_feh_read_verify_code(const char *img,int len,char *result)
 {
-
+	KmScopedLock lock(proc_mutex);
 	char img_file_path[] = "./login_verify.jpg";
 	FILE *fp = fopen(img_file_path,"w");
 	if(fp == NULL){
@@ -1091,11 +1109,11 @@ int	CHttpProcesser::RequestIndex(apr_socket_t* s,CLIENT_INFO* ci)
 	if(req_header.empty()){
 		//LOG here
 		//let next time try agian
-		LOG_DEBUG("RequestIndex request header empty");
+		run_logger.debug("RequestIndex request header empty");
 		return -1;
 	}
 
-	LOG_DEBUG("开始请求浙江在线挂号首页,http头:\n%s",req_header.c_str());
+	run_logger.info("开始请求浙江在线挂号首页");
 	
 	int req_header_len = req_header.size();
 	bool   finish   = false;
@@ -1134,12 +1152,12 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 		std::string req_header = rh.GetRequest();
 		if(req_header.empty()){
 			//LOG here
-			LOG_DEBUG("RequestVerify request header is empty");
+			run_logger.warn("RequestVerify request header is empty");
 			close_connection(s,ci);
 			return -1;
 		}
 		
-		LOG_DEBUG("request login verify image http header:\n%s",req_header.c_str());
+		run_logger.debug("请求登陆验证码");
 
 		int req_header_len = req_header.size();
 		bool finish = send_data(s,req_header.c_str(),req_header_len);
@@ -1180,12 +1198,12 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 		std::string req_header = rh.GetRequest();
 		if(req_header.empty()){
 			//LOG here
-			LOG_DEBUG("request header is empty");
+			run_logger.warn("request header is empty");
 			close_connection(s,ci);
 			return -1;
 		}
 
-		LOG_DEBUG("request verify image http header:\n%s",req_header.c_str());
+		run_logger.debug("请求选号验证码");
 
 		int req_header_len = req_header.size();
 		bool finish = send_data(s,req_header.c_str(),req_header_len);
@@ -1227,7 +1245,7 @@ int	CHttpProcesser::RequestLogin(apr_socket_t* s,CLIENT_INFO* ci)
 			return -1;
 		}
 
-		LOG_DEBUG("RequestLogin login verify image:%s",verify_login_image);
+		run_logger.info("验证码值:%s",verify_login_image);
 		//组织http请求头并请求登陆
 		CRequestHeader rh;
 		std::ostringstream oss;
@@ -1253,12 +1271,12 @@ int	CHttpProcesser::RequestLogin(apr_socket_t* s,CLIENT_INFO* ci)
 		std::string req_header = rh.GetRequest();
 		if(req_header.empty()){
 			//LOG here
-			LOG_DEBUG("RequestLogin request header is empty"); 
+			run_logger.warn("RequestLogin request header is empty"); 
 			close_connection(s,ci);
 			return -2;
 		}
 
-		LOG_DEBUG("请求登陆的http请求头:\n%s",req_header.c_str());
+		run_logger.info("请求登陆");
 		int req_header_len = req_header.size();
 		bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1304,12 +1322,12 @@ int	CHttpProcesser::RequestHospital(apr_socket_t* s,CLIENT_INFO* ci)
 	
 	if(req_header.empty()){
 		//LOG here
-		LOG_DEBUG("RequestHospital request header is empty");
+		run_logger.warn("RequestHospital request header is empty");
 		close_connection(s,ci);
 		return -3;
 	}
 
-	LOG_DEBUG("请求医院的http请求头:\n%s",req_header.c_str());
+	run_logger.info("请求指定医院");
 	int req_header_len = req_header.size();
 	bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1364,12 +1382,12 @@ int 	CHttpProcesser::RequestDepartment(apr_socket_t* s,CLIENT_INFO* ci)
 	
 	if(req_header.empty()){
 		//LOG here
-		LOG_DEBUG("RequestDepartment request header is empty");
+		run_logger.warn("RequestDepartment request header is empty");
 		close_connection(s,ci);
 		return -3;
 	}
 
-	LOG_DEBUG("RequestDepartment request http header:\n%s",req_header.c_str());
+	run_logger.debug("请求指定医院的指定科室");
 	int req_header_len = req_header.size();
 	bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1392,7 +1410,7 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 
 	if(detail_doc_map.empty() || department_map.empty()){
 		//需要回滚请求
-		LOG_DEBUG("RequestDoctor but doc map and depart map empty");
+		run_logger.debug("RequestDoctor but doc map and depart map empty");
 		return -1;
 	}
 
@@ -1429,6 +1447,7 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 		//ci->is_lock = 0;
 		//ci->current_request_type = 	DEPART;
 		//if doctor name not valid exit,because we checked at start
+		run_logger.error("doctor name not valid exit");
 		exit(1);
 	}
 
@@ -1463,12 +1482,12 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 
 	std::string req_header = rh.GetRequest();
 	if(req_header.empty()){
-		LOG_DEBUG("RequestDoctor http header is empty,close connection");
+		run_logger.warn("RequestDoctor http header is empty,close connection");
 		close_connection(s,ci);
 		return -4;
 	}	
 
-	LOG_DEBUG("RequestDoctor request http header:\n%s",req_header.c_str());
+	run_logger.info("请求医生:'%s'获取最新号源列表",user_date_doctor.c_str());
 	int req_header_len = req_header.size();
 	bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1517,12 +1536,12 @@ int 	CHttpProcesser::RequestDialogbJS(apr_socket_t* s,CLIENT_INFO* ci)
 
 	std::string req_header = rh.GetRequest();
 	if(req_header.empty()){
-		LOG_DEBUG("RequestDialogbJS request header is empty,close connection");
+		run_logger.warn("RequestDialogbJS request header is empty,close connection");
 		close_connection(s,ci);
 		return -3;
 	}	
 
-	LOG_DEBUG("RequestDialogbJS request  header:\n%s" ,req_header.c_str());
+	run_logger.info("请求选号前的js脚本");
 	int req_header_len = req_header.size();
 	bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1588,6 +1607,9 @@ int	CHttpProcesser::RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci)
 			<< "qhsj=" << item[2] << "&"
 			<< "sg="   << doc->mgenc;
 		rh.SetContent(oss.str());
+
+		run_logger.info("请求确认选号的请求正文:%s",oss.str().c_str());
+		
 		int len  = oss.str().size();
 		oss.str("");
 		oss << len;
@@ -1595,12 +1617,11 @@ int	CHttpProcesser::RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci)
 
 		std::string req_header = rh.GetRequest();
 		if(req_header.empty()){
-			LOG_DEBUG("RequestConfirmDoctor request CONFIRM http header is empty,close connection");
+			run_logger.warn("RequestConfirmDoctor request CONFIRM http header is empty,close connection");
 			close_connection(s,ci);
 			return -2;
 		}	
 
-		LOG_DEBUG("request CONFIRM http header:\n%s",req_header.c_str());
 		int req_header_len = req_header.size();
 		bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1655,19 +1676,19 @@ int 	CHttpProcesser::ProcessIndexResult(apr_socket_t* s,CLIENT_INFO* ci)
 		//TODO:容错处理
 		ci->is_lock = 0;
 		ci->current_request_type = BEGIN;
-		LOG_DEBUG("ProcessIndexResult response content is empty,set request type to BEGIN");
+		run_logger.debug("ProcessIndexResult response content is empty,set request type to BEGIN");
 		return -2;
 	}
 	
-	LOG_TO_FILE("index.html",content);
-	LOG_DEBUG("ProcessIndexResult response header:\n%s",parse_res.GetHeader().c_str());
+	//LOG_TO_FILE("index.html",content);
 	session_cookies = parse_res.GetSetCookies();
-
+	run_logger.info("ProcessIndexResult response header,cookie:%s",session_cookies.c_str());
+	
 	CParseHtml phtml;
 	hospital_map = phtml.ParseIndexHtml((char*)content.c_str());
 	if(hospital_map.empty()){
 		//TODO:如果响应正文解析不到hospital map则close连接
-		LOG_DEBUG("ProcessIndexResult response content can't find hospital list info,close connection");
+		run_logger.warn("ProcessIndexResult response content can't find hospital list info,close connection");
 		close_connection(s,ci);
 		return -3;
 	}
@@ -1691,11 +1712,11 @@ int 	CHttpProcesser::ProcessVerifyResult(apr_socket_t* s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = INDEX;
-			LOG_DEBUG("ProcessVerifyResult response login image is empty,set request type to INDEX");
+			run_logger.debug("ProcessVerifyResult response login image is empty,set request type to INDEX");
 			return -2;
 		}
 		
-		LOG_DEBUG("ProcessVerifyResult VERIA response");
+		run_logger.info("ProcessVerifyResult login verify response");
 		//std::cout << "verify response content:" << res_content << "\n";
 		//取图片内容保持到ci->res_data中
 		memset(ci->res_data,0,ci->res_len);
@@ -1714,14 +1735,13 @@ int 	CHttpProcesser::ProcessVerifyResult(apr_socket_t* s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = JS;
-			LOG_DEBUG("ProcessVerifyResult response login image is empty,set request type to JS");
+			run_logger.debug("ProcessVerifyResult response login image is empty,set request type to JS");
 			return -2;
 		}
 
-		LOG_DEBUG("ProcessVerifyResult VERIB response");
+		run_logger.info("ProcessVerifyResult confirm verify response");
 
-		//std::cout << "verify response content:" << res_content << "\n";
-		//取图片内容保持到ci->res_data中
+		//由于每次进行确认选号的时候都需要验证码,并且对当前这个连接有效,因此取图片内容保持到ci->res_data中
 		memset(ci->res_data,0,ci->res_len);
 		memcpy(ci->res_data,res_content.c_str(),res_content.size());
 		ci->res_len = res_content.size();
@@ -1752,16 +1772,16 @@ int	CHttpProcesser::ProcessLoginResult(apr_socket_t* s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = VERIA;
-			LOG_DEBUG("ProcessLoginResult response content is empty,set request type to VERIA");
+			run_logger.debug("ProcessLoginResult response content is empty,set request type to VERIA");
 			return -2;
 		}
 		
-		LOG_DEBUG("请求登陆的响应正文:%s\n",res_content.c_str());
+		run_logger.info("请求登陆的响应正文:%s",res_content.c_str());
 		if(strncmp(res_content.c_str(),"OK",2) != 0 || std::string::npos != res_content.find("验证码已过期")){
 			//登陆失败,重新请求验证码
 			ci->is_lock = 0;
 			ci->current_request_type = INDEX;
-			LOG_DEBUG("ProcessLoginResult login failed,set request type to VERIA");
+			run_logger.warn("ProcessLoginResult login failed,set request type to VERIA");
 			memset(verify_login_image,0,255);
 			return -3;
 		}
@@ -1780,7 +1800,7 @@ int	CHttpProcesser::ProcessLoginResult(apr_socket_t* s,CLIENT_INFO* ci)
 			user_id = items.at(1) ;
 			is_first_login = 0;
 		}else{
-			LOG_DEBUG("ProcessLoginResult login failed,can't find user id");
+			run_logger.error("ProcessLoginResult login failed,can't find user id");
 			exit(1);
 		} 
 
@@ -1804,21 +1824,21 @@ int 	CHttpProcesser::ProcessHospitalResult(apr_socket_t* s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = LOGIN;
-			LOG_DEBUG("ProcessHospitalResult response content is empty,set request type to LOGIN");
+			run_logger.debug("ProcessHospitalResult response content is empty,set request type to LOGIN");
 			return -2;
 		}
 
-		LOG_DEBUG("请求指定医院的科室列表的响应头:\n%s",parse_res.GetHeader().c_str());
+		run_logger.info("获取到指定医院的科室列表的响应");
 		memset(ci->res_data,0,ci->res_len);
 		memcpy(ci->res_data,res_content.c_str(),res_content.size());
 		ci->res_len = res_content.size();	
-		LOG_TO_FILE("hospital.html",res_content);
+		//LOG_TO_FILE("hospital.html",res_content);
 		CParseHtml phtml;
 		department_map = phtml.ParseHospitalHtml(ci->res_data);
 		if(department_map.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = LOGIN;
-			LOG_DEBUG("ProcessHospitalResult find hospital's department error,set request type to LOGIN\n");
+			run_logger.debug("ProcessHospitalResult find hospital's department error,set request type to LOGIN\n");
 			return -3;
 		}
 
@@ -1850,20 +1870,20 @@ int	CHttpProcesser::ProcessDepartmentResult(apr_socket_t *s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = HOS;
-			LOG_DEBUG("ProcessDepartmentResult response content is empty,set request type to HOS");
+			run_logger.debug("ProcessDepartmentResult response content is empty,set request type to HOS");
 			return -2;
 		}
 
-		LOG_DEBUG("请求指定科室的医生列表的响应头:\n%s",parse_res.GetHeader().c_str());
+		run_logger.info("获取到指定科室的医生列表的响应头");
 
 		memset(ci->res_data,0,ci->res_len);
 		memcpy(ci->res_data,res_content.c_str(),res_content.size());
 		ci->res_len = res_content.size();	
-		LOG_TO_FILE("department.html",res_content);
+		//LOG_TO_FILE("department.html",res_content);
 		CParseHtml phtml;
 		detail_doc_map = phtml.ParseDeparmentHtml(ci->res_data);
 		if(department_map.empty()){
-			LOG_DEBUG("ProcessDepartmentResult find department's doctor list error");
+			run_logger.debug("ProcessDepartmentResult find department's doctor list error");
 			ci->is_lock = 0;
 			ci->current_request_type = DEPART;
 			return -3;
@@ -1890,20 +1910,18 @@ int	CHttpProcesser::ProcessDoctorResult(apr_socket_t *s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = DEPART;
-			LOG_DEBUG("ProcessDoctorResult response content is empty,set request type to DEPART");
+			run_logger.debug("ProcessDoctorResult response content is empty,set request type to DEPART");
 			return -2;
 		}
 
+		run_logger.info("获取到指定预约医生的响应正文:%s",parse_res.GetContent().c_str());
 
-		LOG_DEBUG("请求指定预约医生的响应头:\n%s",parse_res.GetHeader().c_str());
-		LOG_DEBUG("请求指定预约医生的响应正文:\n%s",parse_res.GetContent().c_str());
-
-		LOG_TO_FILE("the_doc_info.html",res_content);
+		//LOG_TO_FILE("the_doc_info.html",res_content);
 		//not login
 		if(res_content ==  "-2"){
 			ci->is_lock = 0;
 			ci->current_request_type = VERIA;
-			LOG_DEBUG("ProcessDoctorResult user not login,go to login!");
+			run_logger.debug("ProcessDoctorResult user not login,go to login!");
 			return -3;		
 		}
 
@@ -1914,13 +1932,18 @@ int	CHttpProcesser::ProcessDoctorResult(apr_socket_t *s,CLIENT_INFO* ci)
 		//解析响应进行组织为确认预约请求组织请求正文
 		std::vector<std::string> items;
 		split(ci->res_data,items,"#");
-		if(items.size() != 13){
+		if(items.size() != 13){//不存在号
 			close_connection(s,ci);
-			LOG_DEBUG("ProcessDoctorResult item size not avail ,close connection and res_content:%s",ci->res_data);
+			run_logger.warn("ProcessDoctorResult item size not avail ,close connection and res_content:%s",ci->res_data);
 			return -4;
 		}
 
 		RES_DOC *doc = (RES_DOC*)apr_pcalloc(sub_pool,sizeof(RES_DOC));
+		if(doc == NULL){
+			close_connection(s,ci);
+			run_logger.error("alloc buffer error");
+			return -11;
+		}
 		strcpy(doc->sfz,items[5].c_str());//身份证 
         strcpy(doc->xm ,items[6].c_str());//姓名
         strcpy(doc->yymc,items[1].c_str());//医院
@@ -1960,7 +1983,7 @@ int 	CHttpProcesser::ProcessDialogbJSResult(apr_socket_t* s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = DOCTOR;
-			LOG_DEBUG("ProcessDialogbJSResult response content is empty,set request type to DOCTOR");
+			run_logger.debug("ProcessDialogbJSResult response content is empty,set request type to DOCTOR");
 			return -2;
 		}
 
@@ -1970,10 +1993,8 @@ int 	CHttpProcesser::ProcessDialogbJSResult(apr_socket_t* s,CLIENT_INFO* ci)
 		b = res_content.find("var");
 		e = res_content.find("=",b+1);
 
-		LOG_DEBUG("请求JS的响应头:\n%s",parse_res.GetHeader().c_str());
-		LOG_TO_FILE("dialogb.js",res_content);
 		if(b == std::string::npos || e == std::string::npos){
-			LOG_DEBUG("ProcessDialogbJSResult can't find dialogB.js first item,close connectoin and res_content:%s",res_content.c_str());
+			run_logger.warn("ProcessDialogbJSResult can't find dialogB.js first item,close connectoin and res_content:%s",res_content.c_str());
 			close_connection(s,ci);
 			return -3;
 		}
@@ -1985,7 +2006,7 @@ int 	CHttpProcesser::ProcessDialogbJSResult(apr_socket_t* s,CLIENT_INFO* ci)
 		memcpy(((RES_DOC*)ci->data)->js,js_var.c_str(),js_var.size());
 		((RES_DOC*)ci->data)->js[js_var.size()] = '\0';
 
-		LOG_DEBUG("ProcessDialogbJSResult 获取js var结果:%s",js_var.c_str());
+		run_logger.info("ProcessDialogbJSResult 获取js var结果:%s",js_var.c_str());
 		ci->is_lock = 0;
 		ci->last_active_time = time(NULL);
 	}else{
@@ -2009,11 +2030,11 @@ int	CHttpProcesser::ProcessConfirmResult(apr_socket_t *s,CLIENT_INFO* ci)
 		if(res_content.empty()){
 			ci->is_lock = 0;
 			ci->current_request_type = DOCTOR;
-			LOG_DEBUG("ProcessConfirmResult response content is empty,set request type to DOCTOR");
+			run_logger.debug("ProcessConfirmResult response content is empty,set request type to DOCTOR");
 			return -2;
 		}
 		//TODO:还要考虑号已经预约完了和当前预约失败的处理
-		LOG_DEBUG("预约结果:%s",res_content.c_str());
+		run_logger.info("获取到预约结果的响应:%s",res_content.c_str());
 
 		std::vector<std::string> items;
 		split(res_content.c_str(),items,"|");
@@ -2023,8 +2044,13 @@ int	CHttpProcesser::ProcessConfirmResult(apr_socket_t *s,CLIENT_INFO* ci)
 			<< ",取号时间:" << items.at(8).substr(0,4)<< "-" << items.at(8).substr(4,2) << "-" 
 			<< items.at(8).substr(6,2) << " " << items.at(14).substr(0,2) << ":" << items.at(14).substr(2)
 			<< ",第" << items.at(13) << "号,取号密码:" << items.at(11) << "\n";
-			LOG_TO_FILE("result.txt",oss.str());
+			result_logger.info(oss.str().c_str());
 			exit(0);
+		}else{
+			ci->is_lock = 0;
+			ci->current_request_type = DOCTOR;
+			run_logger.debug("ProcessConfirmResult response content is failed,set request type to DOCTOR");
+			return -3;
 		}
 		//957102|浙二医院|外科|徐斌|1069018|350521197404071798|高乐音|1616887|20121121|0|5|13842106|42922816|11|0940
 

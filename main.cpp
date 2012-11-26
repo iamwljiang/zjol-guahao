@@ -27,6 +27,7 @@
  
 #include "HttpProcesser.h"
 #include "ControlManager.h"
+#include "ssignal.h"
 #include <iostream>
 #include <sstream>
 //#include "DataType.h"
@@ -34,7 +35,7 @@
 #include "gnu_getopt.h"
 #endif
 
-#define V_0_1_1 "当前版本0.1.1 支持交互式多并发,支持数据压缩传输,不支持自动识别验证码"  
+#define V_0_1_1 "当前版本0.1.2 支持并发线程连接控制,支持数据压缩传输,不支持自动识别验证码,log记录"  
 
 static std::string user;
 static std::string passwd;
@@ -43,9 +44,13 @@ static std::string want_department;
 static std::string want_doctor;
 static std::string want_week="-1";
 
+static std::string thread_number;
+static std::string connection_number;
+
 static std::string log_file="guahao_info.txt";
 static std::string result_file="result.txt";
 
+extern boost::function0<void> console_ctrl_function;
 void display(const std::string &rhs)
 {
 	std::cout << rhs << "\n";
@@ -62,6 +67,8 @@ void Usage(char **argv)
 		<< "-a hospital     指定需要挂号的医院,可选\n"
 		<< "-b department   指定需要挂号的科室,不为空的时候,必须-a也不为空\n"
 		<< "-c doctor       指定需要挂号的医生,不为空的时候,必须-b也不为空\n"
+		<< "-m thread number     程序需要启动的线程数\n"
+		<< "-n connection number 每个线程的连接数\n"
 		<< "-t weekday      用户指定需要一周内的预约时间,,0-6代表礼拜天到礼拜礼拜六,默认从最近有号的一天\n"
 		<< "-o logfile      用于指定运行log输出到目标文件,默认执行目录下的guahao_info.log\n"
 		<< "-r result       用于指定挂号成功信息的目标文件,默认执行目录下的result.txt\n"
@@ -88,7 +95,16 @@ int Start()
 	}
 
 	CControlManager control_manager;
-
+	console_ctrl_function = boost::bind(&CControlManager::Stop,&control_manager);
+#ifdef WIN32
+    SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
+#else
+    init_signal();
+#endif
+	//set argument
+	control_manager.SetWeekday(want_week);
+	control_manager.SetLogfile(log_file,result_file);
+	control_manager.SetConcurrent(thread_number,connection_number);
 	if(control_manager.Init("guahao.zjol.com.cn",80) < 0){
 		return -4;
 	}
@@ -224,11 +240,6 @@ int Start()
 		}
 	}while(det_iter == detail_map.end());
 
-
-	//set argument
-	control_manager.SetWeekday(want_week);
-	control_manager.SetLogfile(log_file,result_file);
-
 	//start threads
 	control_manager.Run(want_hospital,want_department,want_doctor);
 	return 0;
@@ -242,7 +253,7 @@ int main(int argc,char **argv)
 	processer.Run();
 	*/
 
-	const char* optstring = "u:p:a:b:c:t:o:r:vh?";
+	const char* optstring = "u:p:a:b:c:t:m:n:o:r:vh?";
 	int ret = 0;
 	if(argc > 1){
 		while((ret = getopt(argc,argv,optstring)) != -1){
@@ -270,6 +281,12 @@ int main(int argc,char **argv)
 					break;
 				case 'r':
 					result_file.assign(optarg);
+					break;
+				case 'm':
+					thread_number.assign(optarg);
+					break;
+				case 'n':
+					connection_number.assign(optarg);
 					break;
 				case 'v':
 					std::cout << V_0_1_1 << std::endl; 

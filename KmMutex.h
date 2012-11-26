@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2012, chlaws <iamwljiang at gmail.com>
  * All rights reserved.
  * 
@@ -24,50 +24,100 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
-#include <string>
-#include <vector>
-#include "logger.h"
-#ifdef __cplusplus
-extern "C" {
+
+#ifndef _TEST_KMMUTEX_H_
+#define _TEST_KMMUTEX_H_
+
+#ifdef WIN32
+#include <winsock2.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <grp.h>
+#include <pwd.h>
+#include <dirent.h>
 #endif
 
 #ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
-
+#pragma comment(lib, "ws2_32.lib")
 #else
-#ifndef STRTOK
-#define STRTOK strtok_r
-#endif
-#endif
-
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <pthread.h>
 #endif
 
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
-
-int   debug_log(const char* fmt,...);
-
-char* get_current_time_line(char* buf,int buf_len);
-
-int   strwtoi(const char* day);
-
-/*
-int open_file(const char* filename);
-
-void close_file();
-
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-*/
-
-extern Logger run_logger;
-extern Logger result_logger;
-#ifdef __cplusplus
-}
-#endif	
+class KmMutex {
+  public:
+    inline KmMutex() {
+#ifdef WIN32
+        InitializeCriticalSection(&_mutex);
+#else
+        pthread_mutex_init(&_mutex, NULL);
 #endif
+    }
+
+    inline ~KmMutex() {
+#ifdef WIN32
+        DeleteCriticalSection(&_mutex);
+#else
+        pthread_mutex_destroy(&_mutex);
+#endif
+    }
+
+    inline void lock() {
+#ifdef WIN32
+        EnterCriticalSection(&_mutex);
+#else
+        pthread_mutex_lock(&_mutex);
+#endif
+    }
+
+    inline void unlock() {
+#ifdef WIN32
+        LeaveCriticalSection(&_mutex);
+#else
+        pthread_mutex_unlock(&_mutex);
+#endif
+    }
+
+  private:
+
+    KmMutex(const KmMutex &);
+
+    const KmMutex & operator = (const KmMutex &);
+
+  private:
+
+#ifdef WIN32
+    CRITICAL_SECTION    _mutex;
+#else
+    pthread_mutex_t     _mutex;
+#endif
+};
+
+
+class KmScopedLock {
+  public:
+    inline KmScopedLock(KmMutex & mutex) : _mutex(mutex) {
+        _mutex.lock();
+    }
+
+    inline ~KmScopedLock() {
+        _mutex.unlock();
+    }
+
+  private:
+
+    KmScopedLock(const KmScopedLock &);
+
+    const KmScopedLock & operator = (const KmScopedLock &);
+
+  private:
+
+    KmMutex & _mutex;
+};
+
+#endif  // _TEST_KMMUTEX_H_

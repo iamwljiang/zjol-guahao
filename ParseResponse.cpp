@@ -104,6 +104,7 @@ void CParseResponse::parsed(const char* res)
 		char * tsave_ptr = NULL;
 		char * tresult   = NULL;
 		if( i == 0){//parse response status line
+			res_line.assign(token2);
 			header_size+= strlen(token2)+2;
 			tresult = STRTOK(token2," ",&tsave_ptr);
 			if(tresult != NULL){
@@ -263,10 +264,10 @@ std::string 		CParseResponse::GetContent()
 
 std::string 		CParseResponse::GetHeader()
 {
-	std::string msg = "";
+	std::string msg = res_line+"\r\n";
 	std::map<std::string,std::string>::iterator iter = res_headers.begin();
 	for(; iter != res_headers.end(); ++iter){
-		msg += iter->first + ":" + iter->second + "\n";
+		msg += iter->first + ":" + iter->second + "\r\n";
 	}
 
 	return msg;

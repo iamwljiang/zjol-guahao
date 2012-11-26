@@ -56,11 +56,12 @@ public:
 	
 	void 	SetLogfile(const std::string& run_log,const std::string& result_log);
 
+	void 	SetConcurrent(const std::string& thread_number,const std::string& connection_number);
 	//start threads
 	int 	Run(const std::string& hos,const std::string& dep,const std::string &doc);
 
 	//stop  threads and exit program
-	int 	Stop();
+	void 	Stop();
 
 private:
 	//forbidden copy and assign
@@ -76,6 +77,10 @@ private:
 	std::string 		server_address;
 
 	int 				server_port;
+
+	int 				thread_number;
+
+	int 				connection_number;
 
 	std::string 		hospital_name;
 

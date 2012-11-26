@@ -4,8 +4,152 @@
 		"selected_items":
 		[
 			[
+				"con",
+				"control_manager"
+			],
+			[
+				"rn",
+				"run_logger"
+			],
+			[
+				"resu",
+				"result_logger"
+			],
+			[
+				"run",
+				"run_logger"
+			],
+			[
+				"Th",
+				"THREAD_NUMBER"
+			],
+			[
+				"conn",
+				"connection_number"
+			],
+			[
+				"thread",
+				"thread_number"
+			],
+			[
+				"user",
+				"user_date_doctor"
+			],
+			[
+				"server",
+				"server_address"
+			],
+			[
+				"is",
+				"is_first_login"
+			],
+			[
+				"is_",
+				"is_first_login"
+			],
+			[
+				"info",
+				"info_iter"
+			],
+			[
+				"hos",
+				"hospital_map"
+			],
+			[
+				"user_da",
+				"user_date_doctor"
+			],
+			[
+				"user_",
+				"user_date_doctor"
+			],
+			[
+				"Process",
+				"ProcessVerifyResult"
+			],
+			[
+				"use",
+				"user_date_department"
+			],
+			[
+				"det",
+				"det_iter"
+			],
+			[
+				"depa",
+				"depart_iter"
+			],
+			[
+				"de",
+				"depart_iter"
+			],
+			[
+				"depar",
+				"depart_map"
+			],
+			[
+				"dear",
+				"depart_iter"
+			],
+			[
+				"mana",
+				"manager_connections"
+			],
+			[
+				"next",
+				"next_iter"
+			],
+			[
+				"Pro",
+				"ProcessDepartmentResult"
+			],
+			[
+				"Re",
+				"RequestDepartment"
+			],
+			[
+				"Request",
+				"RequestHospital"
+			],
+			[
+				"fail",
+				"fail_interval"
+			],
+			[
+				"las",
+				"last_active_time"
+			],
+			[
+				"APR_",
+				"APR_POLLIN"
+			],
+			[
+				"ac",
+				"active_num"
+			],
+			[
+				"first",
+				"first_connection"
+			],
+			[
+				"G",
+				"GUAHAO_SIMPLE_SIGNAL_H_"
+			],
+			[
+				"Cont",
+				"ControlManager"
+			],
+			[
 				"want",
 				"want_doctor"
+			],
+			[
+				"want_",
+				"want_department"
+			],
+			[
+				"err",
+				"error_count"
 			],
 			[
 				"wan",
@@ -20,10 +164,6 @@
 				"log_file"
 			],
 			[
-				"want_",
-				"want_doctor"
-			],
-			[
 				"Con",
 				"CControlManager"
 			],
@@ -36,16 +176,8 @@
 				"ostringstream"
 			],
 			[
-				"user",
-				"user_id"
-			],
-			[
 				"hosp",
 				"hospital"
-			],
-			[
-				"hos",
-				"hospital_map"
 			],
 			[
 				"en",
@@ -68,14 +200,6 @@
 				"wait_connections"
 			],
 			[
-				"APR_",
-				"APR_SUCCESS"
-			],
-			[
-				"depar",
-				"department"
-			],
-			[
 				"not",
 				"not_active_interval"
 			],
@@ -84,24 +208,8 @@
 				"RequestConfirmDoctor"
 			],
 			[
-				"Pro",
-				"ProcessConfirmResult"
-			],
-			[
 				"RequestDo",
 				"RequestDialogbJS"
-			],
-			[
-				"user_da",
-				"user_date_hospital"
-			],
-			[
-				"Process",
-				"ProcessVerifyResult"
-			],
-			[
-				"use",
-				"use_feh_read_verify_code"
 			],
 			[
 				"Set",
@@ -148,10 +256,6 @@
 				"read_data"
 			],
 			[
-				"user_",
-				"user_date_doctor"
-			],
-			[
 				"set",
 				"set_visit_cookie"
 			],
@@ -164,16 +268,8 @@
 				"DEPMAP"
 			],
 			[
-				"de",
-				"department_map"
-			],
-			[
 				"ver",
 				"verify_login_image"
-			],
-			[
-				"is",
-				"is_lock"
 			],
 			[
 				"req_he",
@@ -198,10 +294,6 @@
 			[
 				"cur",
 				"current_request_type"
-			],
-			[
-				"las",
-				"last_active_time"
 			],
 			[
 				"close",
@@ -356,10 +448,6 @@
 				"APR_SUCCESS"
 			],
 			[
-				"con",
-				"context_length"
-			],
-			[
 				"toupp",
 				"toupper_self"
 			],
@@ -426,54 +514,6 @@
 			[
 				"MUc",
 				"MucRoomUser"
-			],
-			[
-				"type",
-				"typemap"
-			],
-			[
-				"mov",
-				"mov_typename_map"
-			],
-			[
-				"mov_",
-				"mov_typename_map"
-			],
-			[
-				"CA",
-				"CATEGORY_NEWS"
-			],
-			[
-				"C",
-				"CATEGORY_ENTERTAINMENT"
-			],
-			[
-				"mov_type",
-				"mov_type_map"
-			],
-			[
-				"str",
-				"str_mov_id"
-			],
-			[
-				"e",
-				"empty"
-			],
-			[
-				"pri",
-				"private"
-			],
-			[
-				"te",
-				"template_file"
-			],
-			[
-				"uid",
-				"uid_hash_sub_key"
-			],
-			[
-				"u_has",
-				"uid_hash_key"
 			]
 		]
 	},
@@ -483,7 +523,7 @@
 			"file": "HttpProcesser.h",
 			"settings":
 			{
-				"buffer_size": 6253,
+				"buffer_size": 7943,
 				"line_ending": "Windows"
 			}
 		},
@@ -491,23 +531,23 @@
 			"file": "HttpProcesser.cpp",
 			"settings":
 			{
-				"buffer_size": 47793,
+				"buffer_size": 56535,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "ControlManger.h",
+			"file": "ControlManager.h",
 			"settings":
 			{
-				"buffer_size": 2439,
+				"buffer_size": 3345,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "ControlManger.cpp",
+			"file": "ControlManager.cpp",
 			"settings":
 			{
-				"buffer_size": 1597,
+				"buffer_size": 5103,
 				"line_ending": "Windows"
 			}
 		},
@@ -515,7 +555,47 @@
 			"file": "main.cpp",
 			"settings":
 			{
-				"buffer_size": 4231,
+				"buffer_size": 8330,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "Strutil.h",
+			"settings":
+			{
+				"buffer_size": 2430,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "Strutil.cpp",
+			"settings":
+			{
+				"buffer_size": 3932,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "logger.cpp",
+			"settings":
+			{
+				"buffer_size": 17225,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "ssignal.cpp",
+			"settings":
+			{
+				"buffer_size": 3099,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "ssignal.h",
+			"settings":
+			{
+				"buffer_size": 1908,
 				"line_ending": "Windows"
 			}
 		}
@@ -548,13 +628,19 @@
 	},
 	"file_history":
 	[
-		"/E/Company/self/guahao/ParseHtml.cpp",
-		"/E/Company/self/guahao/Strutil.cpp",
 		"/E/Company/self/guahao/FUTURE",
+		"/E/Company/self/guahao/logger.h",
+		"/E/Company/self/guahao/logger.cpp",
+		"/E/Company/self/guahao/ssignal.cpp",
+		"/E/Company/self/guahao/Strutil.cpp",
+		"/E/Company/self/guahao/Strutil.h",
 		"/E/Company/self/guahao/ParseResponse.h",
 		"/E/Company/self/guahao/ParseResponse.cpp",
-		"/E/Company/self/guahao/Strutil.h",
+		"/E/Company/self/guahao/KmMutex.h",
+		"/E/Company/self/guahao/ParseHtml.cpp",
 		"/E/Company/self/guahao/DataType.h",
+		"/E/Company/self/guahao/ssignal.h",
+		"/E/Company/self/guahao/ssignal.c",
 		"/E/Company/self/guahao/main.cpp",
 		"/E/Company/self/guahao/ParseHtml.h",
 		"/E/Company/self/guahao/RequestHeader.cpp",
@@ -609,6 +695,57 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"ProcessActive socket have data need read,socket is not null",
+			"ProcessActive socket have data need read,socket is not null,sock ",
+			"请求登陆",
+			"LOG_TO_FILE",
+			"ProcessConfirmResult",
+			"ProcessDoctorResult item size not avail",
+			"ProcessDoctorResult",
+			"ProcessConfirmResult",
+			"proc_mutex",
+			"open_file",
+			"Log_to_file",
+			"close_connection",
+			"Clear",
+			"apr_pcalloc",
+			"apralloc",
+			"apr_alloc",
+			"apr_calloc",
+			"ProcessIndexResult response content can't find hospital list",
+			"use_feh_read_verify_code",
+			"want_week",
+			"nwant_day",
+			"RequestDoctor",
+			"Run connection manager size",
+			"Run connection manager size:1",
+			"RequestDoctor",
+			"Run",
+			"ProcessLoginResult login failed,set request type to VERIA",
+			"is_first_login",
+			"RequestDoctor",
+			"ProcessDepartmentResult",
+			"RequestDepartment",
+			"ProcessLoginResult",
+			"ProcessVerifyResult",
+			"温州",
+			"HOSMAP",
+			"hospital_map",
+			"RequestHospital",
+			"HOSMAP",
+			"ProcessIndexResult",
+			"\n",
+			"std::string",
+			" 		",
+			"Department",
+			"department",
+			"hos_map",
+			"depart_iter",
+			"want_department",
+			"hos_iter",
+			"Hospital",
+			"hospital",
+			"want_hospital",
 			"RequestConfirmDoctor",
 			"new_connection_num",
 			"sum",
@@ -685,26 +822,7 @@
 			"showDialog",
 			"zYuyue",
 			"showDialog",
-			"online_msg_thread_func",
-			"CheckUseablePoint",
-			"online_msg_handle_ptr",
-			"online_msg_thread_func",
-			"online_msg_handle_ptr",
-			"BareJID",
-			"Map",
-			"repository",
-			"ngx_http_recommend_delay_output",
-			"wParse",
-			"wShowPage",
-			"pp_mov_type",
-			"CPPMoiveType",
-			"/TODO",
-			"ext",
-			"TODO",
-			"ngx_http_recommend_delay_output",
-			"//todo",
-			"variables_map",
-			"clear"
+			"online_msg_thread_func"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -722,7 +840,7 @@
 	"groups":
 	[
 		{
-			"selected": 4,
+			"selected": 2,
 			"sheets":
 			[
 				{
@@ -730,15 +848,15 @@
 					"file": "HttpProcesser.h",
 					"settings":
 					{
-						"buffer_size": 6253,
+						"buffer_size": 7943,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1597,
-								0
+								5334,
+								5334
 							]
 						],
 						"settings":
@@ -747,7 +865,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2715.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -757,15 +875,15 @@
 					"file": "HttpProcesser.cpp",
 					"settings":
 					{
-						"buffer_size": 47793,
+						"buffer_size": 56535,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2629,
-								2629
+								47118,
+								47118
 							]
 						],
 						"settings":
@@ -774,25 +892,25 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 450.0,
+						"translation.y": 30555.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "ControlManger.h",
+					"file": "ControlManager.h",
 					"settings":
 					{
-						"buffer_size": 2439,
+						"buffer_size": 3345,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2427,
-								2427
+								1712,
+								1712
 							]
 						],
 						"settings":
@@ -801,33 +919,34 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 405.0,
+						"translation.y": 45.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 3,
-					"file": "ControlManger.cpp",
+					"file": "ControlManager.cpp",
 					"settings":
 					{
-						"buffer_size": 1597,
+						"buffer_size": 5103,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1597,
-								1597
+								1760,
+								1760
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage"
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 135.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -837,15 +956,42 @@
 					"file": "main.cpp",
 					"settings":
 					{
-						"buffer_size": 4231,
+						"buffer_size": 8330,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3150,
-								3150
+								2208,
+								2208
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 360.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "Strutil.h",
+					"settings":
+					{
+						"buffer_size": 2430,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2374,
+								2320
 							]
 						],
 						"settings":
@@ -853,7 +999,115 @@
 							"syntax": "Packages/C++/C++.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1230.0,
+						"translation.y": 495.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "Strutil.cpp",
+					"settings":
+					{
+						"buffer_size": 3932,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1805,
+								1805
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "logger.cpp",
+					"settings":
+					{
+						"buffer_size": 17225,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7209,
+								7209
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 3757.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "ssignal.cpp",
+					"settings":
+					{
+						"buffer_size": 3099,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1682,
+								1682
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "ssignal.h",
+					"settings":
+					{
+						"buffer_size": 1908,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1763,
+								1763
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"

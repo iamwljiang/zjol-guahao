@@ -72,6 +72,8 @@ private:
 
 	std::string 		set_cookies;
 
+	std::string 		res_line;
+	
 	int					status_code;
 	
 	int 				res_buf_len;

@@ -28,8 +28,10 @@
 #include "ssignal.h"
 #include <signal.h>
 #include <iostream>
-unsigned int global_exit_flag = 0;
 
+boost::function0<void> console_ctrl_function;
+unsigned int global_exit_flag = 0;
+#ifndef WIN32
 void init_signal() {
 	struct sigaction act;
   	act.sa_handler = sig_handler;
@@ -67,9 +69,24 @@ void sig_handler(int v) {
 		case SIGTERM:
 		case SIGINT:
 		case SIGABRT:
-			global_exit_flag = 1; 
+		  console_ctrl_function();
 			break;
 		default:
     		break;
   	}
 }
+
+#else
+BOOL WINAPI console_ctrl_handler(DWORD ctrl_type) {
+  switch (ctrl_type) {
+  case CTRL_C_EVENT:
+  case CTRL_BREAK_EVENT:
+  case CTRL_CLOSE_EVENT:
+  case CTRL_SHUTDOWN_EVENT:
+    console_ctrl_function();
+    return TRUE;
+  default:
+    return FALSE;
+  }
+}
+#endif

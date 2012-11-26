@@ -28,9 +28,13 @@
 #include "ControlManager.h"
 #include "Strutil.h"
 #include "ssignal.h"
-unsigned int CControlManager::THREAD_NUMBER = 1;
-extern PRINT_TYPE LOG_DEBUG ;
-extern unsigned int global_exit_flag ;
+unsigned int CControlManager::THREAD_NUMBER = 2;
+static unsigned int global_exit_flag = 0;
+
+extern Logger run_logger;
+extern Logger result_logger;
+
+
 CControlManager::CControlManager()
 {
 	server_address = "";
@@ -48,6 +52,10 @@ CControlManager::CControlManager()
 	result_log_file = "";
 
 	day = "";
+	
+	thread_number = 2;
+
+	connection_number = 5;
 	apr_initialize();
 }
 
@@ -67,8 +75,16 @@ int CControlManager::Init(const char* address,int port)
 	server_address.assign(address);
 	server_port = port;
 	if((r = first_connection.Init(address,port)) < 0){
-		LOG_DEBUG("CControlManager::Init init first connection error");
+		std::cout << "CControlManager::Init init first connection error\n";
 		return r;
+	}
+
+	if(run_logger.init("error","running.log") != 0){
+		return -11;
+	}
+
+	if(result_logger.init("info","success.log","./","./",NULL,NULL,true) != 0){
+		return -12;
 	}
 
 	return 0;	
@@ -114,10 +130,25 @@ void CControlManager::SetLogfile(const std::string& run_log,const std::string& r
 	this->result_log_file = result_log;
 }
 
+void CControlManager::SetConcurrent(const std::string& thread_number,const std::string& connection_number)
+{
+	if(!thread_number.empty()){
+		this->thread_number = atoi(thread_number.c_str());
+	}
+
+	if(!connection_number.empty()){
+		this->connection_number = atoi(connection_number.c_str());
+	}
+}
+
 int CControlManager::Run(const std::string& hos,const std::string& dep,const std::string &doc)
 {
 	int count_threads = 0;
-	int last_time = 0;
+	int last_time = time(NULL);
+	
+	CHttpProcesser::MAX_CONNECTION = connection_number;
+	THREAD_NUMBER = thread_number;
+
 	while(!apr_atomic_read32(&global_exit_flag)){
 		count_threads = thread_pools.size();
 		if(count_threads < THREAD_NUMBER){
@@ -131,20 +162,22 @@ int CControlManager::Run(const std::string& hos,const std::string& dep,const std
 
 		time_t now = time(NULL);
 		if(now - last_time > 60){
+			//break;
 			struct tm * ptm = localtime(&now);
 			//放号前,增加并发量
+			/*
 			if(ptm->tm_hour == 13 && ptm->tm_min > 50){
-				THREAD_NUMBER = 1;	
+				THREAD_NUMBER = 4;	
 			}	
 			//放号结束后,减少并发量
 			if(ptm->tm_hour == 15 && ptm->tm_min > 10){
-				THREAD_NUMBER = 1;
+				THREAD_NUMBER = 4;
 			}
-
+			*/
 			last_time = now;
 		}
 
-		usleep(20);
+		usleep(50);
 	}
 	
 	for(int i = 0; i < thread_pools.size(); ++i){
@@ -156,9 +189,8 @@ int CControlManager::Run(const std::string& hos,const std::string& dep,const std
 	return 0;
 }
 
-int CControlManager::Stop()
+void CControlManager::Stop()
 {
 	//接受到退出的信号量
 	apr_atomic_set32 (&global_exit_flag,1);
-	return 0;
 }

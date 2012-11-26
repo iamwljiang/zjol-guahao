@@ -30,7 +30,13 @@
 #include <time.h>
 #include <stdarg.h>
 #include <stdio.h>
-PRINT_TYPE LOG_DEBUG =debug_log;
+#include <KmMutex.h>
+
+static KmMutex log_mutex;
+Logger run_logger;
+Logger result_logger;
+
+//PRINT_TYPE LOG_DEBUG =debug_log;
 void  split(const char * data,std::vector<std::string>& items,const std::string& sep)
 {
 	int size = strlen(data)+1;
@@ -60,6 +66,9 @@ void  split(const char * data,std::vector<std::string>& items,const std::string&
 		value.assign(token);	
 		items.push_back(value);		
 	}
+	
+	free(local_data);
+	local_data = NULL;
 }
 
 char* get_current_time_line(char* buf,int buf_len)
@@ -76,16 +85,42 @@ char* get_current_time_line(char* buf,int buf_len)
 #endif 	
 	return buf;	
 }
+
+/*
+static FILE* fp = NULL;
+int open_file(const char* filename)
+{
+	if(fp == NULL){
+		fp = fopen(filename,"w+");
+		if(fp == NULL){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+void close_file()
+{
+	if(fp != NULL){
+		fclose(fp);
+	}
+}
+*/
 int debug_log(const char* fmt,...)
 {
 	const int MAX_BUF_LEN = 8190;
 	char  buf[MAX_BUF_LEN];
 	va_list ap;
 	va_start(ap, fmt);
-	printf("%s [DEBUG] ",get_current_time_line(buf,MAX_BUF_LEN));
-	memset(buf,0,MAX_BUF_LEN);
-	vsnprintf(buf, MAX_BUF_LEN, fmt, ap);
-	printf("%s\n",buf);
+	{
+		KmScopedLock lock(log_mutex);
+		printf("%s [DEBUG] ",get_current_time_line(buf,MAX_BUF_LEN));
+		//fprintf(fp,"%s [DEBUG] ",get_current_time_line(buf,MAX_BUF_LEN));
+		memset(buf,0,MAX_BUF_LEN);
+		vsnprintf(buf, MAX_BUF_LEN, fmt, ap);
+		printf("%s\n",buf);
+		//fprintf(fp,"%s\n",buf);
+	}
 	va_end(ap);
 
 	return 0;

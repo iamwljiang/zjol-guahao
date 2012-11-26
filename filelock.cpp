@@ -24,50 +24,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef GUAHAO_STRUTIL_H_
-#define GUAHAO_STRUTIL_H_
-#include <string>
-#include <vector>
-#include "logger.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
+/***************************************************************************
+                          filelock.cpp  -  description
+                             -------------------
+    begin                : Fri Jul 20 2001
+    copyright            : (C) 2001 by Mark
+    email                : alben@yeah.net
+ ***************************************************************************/
 
-#ifdef WIN32
-#ifndef STRTOK
-#define STRTOK strtok_s
-#endif 
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
-#else
-#ifndef STRTOK
-#define STRTOK strtok_r
-#endif
-#endif
+#ifndef WIN32
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#ifndef SKIP_HEAD_BLANK
-#define SKIP_HEAD_BLANK(p,f) while((p+f) != NULL && (*(p+f)==' ' || *(p+f)=='\t')){f+=1;}
-#endif
+#include "filelock.h"
 
-void  split(const char* data,std::vector<std::string>& items,const std::string& sep);
 
-int   debug_log(const char* fmt,...);
-
-char* get_current_time_line(char* buf,int buf_len);
-
-int   strwtoi(const char* day);
-
-/*
-int open_file(const char* filename);
-
-void close_file();
-
-typedef int (*PRINT_TYPE)(const char*,...);
-extern PRINT_TYPE LOG_DEBUG;
-*/
-
-extern Logger run_logger;
-extern Logger result_logger;
-#ifdef __cplusplus
+CFileLock::CFileLock(const char* sPath)
+{
+	m_iFd = open(sPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 }
-#endif	
+
+
+CFileLock::~CFileLock()
+{
+	close(m_iFd);
+}
+
+
+bool CFileLock::Fcntl(int iCmd, int iType, int iOffset, int iLen, int iWhence)
+{
+	struct flock stLock;
+	stLock.l_type = iType;
+	stLock.l_start = iOffset;
+	stLock.l_whence = iWhence;
+	stLock.l_len = iLen;
+	if (fcntl(m_iFd, iCmd, &stLock) < 0)
+	{
+		if (errno == EINTR)
+			return false;
+	}
+	
+	return true;
+}
 #endif
