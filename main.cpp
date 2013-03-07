@@ -87,11 +87,11 @@ int Start()
 	}
 
 	if(want_hospital.empty() && (!want_department.empty() || !want_doctor.empty())){
-		return -2;
+		return -1;
 	}
 
 	if(want_department.empty() && !want_doctor.empty()){
-		return -3;
+		return -1;
 	}
 
 	CControlManager control_manager;
@@ -106,7 +106,7 @@ int Start()
 	control_manager.SetLogfile(log_file,result_file);
 	control_manager.SetConcurrent(thread_number,connection_number);
 	if(control_manager.Init("guahao.zjol.com.cn",80) < 0){
-		return -4;
+		return -3;
 	}
 
 	//interactive check
@@ -116,7 +116,7 @@ int Start()
 	HOSMAP hos_map;
 	HOSMAP::iterator hos_iter;
 	if(control_manager.GetHositalList(&hos_map) < 0){
-		return -5;
+		return -4;
 	}
 
 	if(control_manager.TestLogin(user,passwd) != 0){

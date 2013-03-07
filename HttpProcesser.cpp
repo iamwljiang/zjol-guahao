@@ -53,9 +53,11 @@
 #define IE_USER_AGENT "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)"
 #define CHROME_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.94 Safari/537.4"
 #define FIREFOX_USER_AGENT "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.8) Gecko/20121012 Firefox/10.0.8"
-#define LOG_TO_FILE(filename,data) std::ofstream out(filename); out << data ; out.close();
+#define LOG_TO_FILE(filename,data) std::ofstream out(filename,std::ios_base::out|std::ios_base::binary); out << data ; out.close();
 #define LOG_APPEND_FILE(filename,data) std::ofstream out(filename,std::ios_base::out|std::ios_base::app); out << data ; out.close();
-#define LOG_SOCK_ERROR(rv,errstr) char buf[200];apr_strerror(rv,buf,sizeof(buf));printf("%s:%s\n",errstr,buf);
+#define LOG_SOCK_ERROR(rv,errstr) {char buf[200];apr_strerror(rv,buf,sizeof(buf));printf("%s:%s\n",errstr,buf);}
+
+#define USER_AGENT CHROME_USER_AGENT
 
 //extern PRINT_TYPE LOG_DEBUG ;
 extern Logger run_logger;
@@ -210,7 +212,7 @@ int 	CHttpProcesser::ProcessActive(int num,const apr_pollfd_t *pfd)
 			run_logger.warn("ProcessActive use pollin and pollout checked connected");
 		}else if(pfd[i].rtnevents & APR_POLLIN){
 			s = (apr_socket_t*)pfd[i].client_data;
-			run_logger.debug("ProcessActive socket have data need read,socket is %s,sock addr:%p,map size:%d"\
+			//run_logger.debug("ProcessActive socket have data need read,socket is %s,sock addr:%p,map size:%d"\
 				,s == NULL? "null" : "not null",s,manager_connections.size());
 			MCMAP::iterator iter = manager_connections.find(s);
 			if(iter != manager_connections.end()){
@@ -345,6 +347,7 @@ void	CHttpProcesser::Clone(CHttpProcesser &rhs)
 	strcpy(verify_login_image,rhs.verify_login_image);
 	std::copy(rhs.hospital_map.begin(),rhs.hospital_map.end(),std::inserter(hospital_map,hospital_map.end()));
 	std::copy(rhs.department_map.begin(),rhs.department_map.end(),std::inserter(department_map,department_map.end()));
+	std::copy(rhs.detail_doc_map.begin(),rhs.detail_doc_map.end(),std::inserter(detail_doc_map,detail_doc_map.end()));
 	nwant_day = rhs.nwant_day;
 	if(!user_id.empty())
 		is_first_login = 0;
@@ -384,7 +387,16 @@ void 	CHttpProcesser::Run()
 			if(iter->second->is_lock == 0){
 				//如果已经登录过那么获取到了hos info 和depart info则直接将新请求的request type定位到HOS
 				if(!is_first_login && iter->second->current_request_type == BEGIN){
-					iter->second->current_request_type = HOS;
+					
+					/*if(!hospital_map.empty() && !department_map.empty() && !detail_doc_map.empty()){
+						iter->second->current_request_type = DOCTOR;
+					}else */if(!hospital_map.empty() && !department_map.empty()){
+						iter->second->current_request_type = DEPART;
+					}else if(!hospital_map.empty()){
+						iter->second->current_request_type = HOS;
+					}else{
+						iter->second->current_request_type = LOGIN;
+					}
 				}
 				//run_logger.debug("CHttpProcesser::Run connection manager size:%d",manager_connections.size());
 				switch(iter->second->current_request_type){
@@ -769,9 +781,11 @@ char*	CHttpProcesser::recv_data(apr_socket_t* s,int* result_len)
 		
 		
 		recv_len += want_recv_len;	
-		//std::cout << "current want recv len:" << current_recv_len << " recv len:"<< want_recv_len<< "\n";
-		//如果需要接受的长度>大于返回的长度则break！
+		//如果需要接受的长度>大于返回的长度则break
+		
 		if(current_recv_len > want_recv_len){
+			if(want_recv_len == 0) LOG_SOCK_ERROR(rv,"apr_socket_recv eof");
+			//run_logger.debug("current want recv len:%d,real recv len:%d",current_recv_len,want_recv_len);
 			break;
 		}
 		//赋予当前返回长度,作为之后while判断条件
@@ -808,6 +822,7 @@ char*	CHttpProcesser::recv_data(apr_socket_t* s,int* result_len)
 		*result_len = recv_len;
 		return buffer;
 	}else{
+		run_logger.debug("CHttpProcesser::recv_data recv_len <=0 ,buffer:%s",buffer);
 		return NULL;
 	}
 }
@@ -869,7 +884,7 @@ int 	CHttpProcesser::read_data(apr_socket_t* s ,CLIENT_INFO* ci)
 
 	int rv = has_chunk(recv_buffer);
 	if(rv < 0){
-		run_logger.warn("CHttpProcesser::read_data has_chunk < 0");
+		run_logger.warn("CHttpProcesser::read_data has_chunk < 0,data:\n%s",recv_buffer);
 		close_connection(s,ci);
 		return -2;
 	}else if(rv > 0){
@@ -1021,8 +1036,8 @@ int 	CHttpProcesser::read_chunk(apr_socket_t* s,char *fsrc,int flen,char **data,
 int 	CHttpProcesser::use_feh_read_verify_code(const char *img,int len,char *result)
 {
 	KmScopedLock lock(proc_mutex);
-	char img_file_path[] = "./login_verify.jpg";
-	FILE *fp = fopen(img_file_path,"w");
+	char img_file_path[] = "./verify.png";
+	FILE *fp = fopen(img_file_path,"wb");
 	if(fp == NULL){
 		return -1;
 	}
@@ -1100,7 +1115,7 @@ int	CHttpProcesser::RequestIndex(apr_socket_t* s,CLIENT_INFO* ci)
 	rheader.SetHeaderField("Host","guahao.zjol.com.cn");
 	rheader.SetHeaderField("Accept-Encoding","gzip, deflate");
 	rheader.SetHeaderField("Connection","Keep-Alive");
-	rheader.SetHeaderField("User-Agent",IE_USER_AGENT);
+	rheader.SetHeaderField("User-Agent",USER_AGENT);
 	rheader.SetHeaderField("Accept","text/html, application/xhtml+xml, */*");
 	rheader.SetHeaderField("Accept-Language","zh-CN");
 
@@ -1146,7 +1161,7 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 		rh.SetHeaderField("Host","guahao.zjol.com.cn");
 		rh.SetHeaderField("Connection","Keep-Alive");		
 		rh.SetHeaderField("Cache-Control","no-cache");
-		rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+		rh.SetHeaderField("User-Agent",USER_AGENT);
 		rh.SetHeaderField("Cookie",session_cookies);
 
 		std::string req_header = rh.GetRequest();
@@ -1176,9 +1191,26 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 		CRequestHeader rh;
 		std::ostringstream oss;
 		srandom(time(NULL));
-		oss << "GET /VerifyCodeCH_SG.aspx?0." << random() << " HTTP/1.1"; 
-		rh.SetRequestLine(oss.str());
+		
+		//NOTE:虽然在zjol在预约阶段获取验证码的时候,仍然会去请求一次/VerifyCodeCH_SG这个接口
+		//但是这个接口取到的验证码不会在之后提交的时候使用,而是切换成了/ashx/getyzm.aspx
+		//oss << "GET /VerifyCodeCH_SG.aspx?0." << random() << " HTTP/1.1"; 
+		
+		//{新预约验证码获取
+		RES_DOC* doc = (RES_DOC*)ci->data;
+		//每段号源信息
+		std::vector<std::string> items; 
+		//单独一段
+		std::vector<std::string> item;
+		split(doc->hy,items,"$");
+		split(items[0].c_str(),item,"|");
+		std::string hy = item[0];
+		
+		oss << "GET /ashx/getyzm.aspx?k=" << (random()%10000) << "&t=yy&hyid=" << hy << " HTTP/1.1";
+		//}
 
+		rh.SetRequestLine(oss.str());
+		
 		//如果refer空则要去查
 		oss.str();
 		oss << refer_uri;
@@ -1190,7 +1222,7 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 		rh.SetHeaderField("Host","guahao.zjol.com.cn");
 		rh.SetHeaderField("Connection","Keep-Alive");		
 		rh.SetHeaderField("Cache-Control","no-cache");
-		rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+		rh.SetHeaderField("User-Agent",USER_AGENT);
 		rh.SetHeaderField("Cookie",session_cookies);
 
 		set_visit_cookie(&rh);
@@ -1202,7 +1234,6 @@ int	CHttpProcesser::RequestVerify(apr_socket_t* s,CLIENT_INFO* ci)
 			close_connection(s,ci);
 			return -1;
 		}
-
 		run_logger.debug("请求选号验证码");
 
 		int req_header_len = req_header.size();
@@ -1258,7 +1289,7 @@ int	CHttpProcesser::RequestLogin(apr_socket_t* s,CLIENT_INFO* ci)
 		rh.SetHeaderField("Accept","*/*");
 		rh.SetHeaderField("Accept-Language","zh-cn");
 		rh.SetHeaderField("Referer","http://guahao.zjol.com.cn/#");
-		rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+		rh.SetHeaderField("User-Agent",USER_AGENT);
 		rh.SetHeaderField("Accept-Encoding","gzip, deflate");
 		rh.SetHeaderField("Host","guahao.zjol.com.cn");
 		rh.SetHeaderField("Connection","Keep-Alive");
@@ -1309,6 +1340,7 @@ int	CHttpProcesser::RequestHospital(apr_socket_t* s,CLIENT_INFO* ci)
 	oss << "GET /" << iter->second.uri << " HTTP/1.1";
 	rh.SetRequestLine(oss.str());
 	rh.SetHeaderField("Accept","text/html, application/xhtml+xml, */*");
+	rh.SetHeaderField("User-Agent",USER_AGENT);
 	rh.SetHeaderField("Referer","http://guahao.zjol.com.cn/");
 	rh.SetHeaderField("Accept-Language","zh-CN");
 	rh.SetHeaderField("Host","guahao.zjol.com.cn");
@@ -1371,7 +1403,7 @@ int 	CHttpProcesser::RequestDepartment(apr_socket_t* s,CLIENT_INFO* ci)
 
 	rh.SetHeaderField("Accept-Language","zh-CN");
 	rh.SetHeaderField("Host","guahao.zjol.com.cn");
-	rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+	rh.SetHeaderField("User-Agent",USER_AGENT);
 	rh.SetHeaderField("Connection","Keep-Alive");
 	rh.SetHeaderField("Cookie",session_cookies);
 
@@ -1435,7 +1467,7 @@ int 	CHttpProcesser::RequestDoctor(apr_socket_t* s,CLIENT_INFO* ci)
 	rh.SetHeaderField("Content-Type","application/x-www-form-urlencoded");
 	rh.SetHeaderField("Content-Type","application/x-www-form-urlencoded");
 	rh.SetHeaderField("Accept-Encoding","gzip, deflate");
-	rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+	rh.SetHeaderField("User-Agent",USER_AGENT);
 	rh.SetHeaderField("Host","guahao.zjol.com.cn");
 	rh.SetHeaderField("Connection","Keep-Alive");
 	rh.SetHeaderField("Cache-Control","no-cache");
@@ -1508,7 +1540,14 @@ int 	CHttpProcesser::RequestDialogbJS(apr_socket_t* s,CLIENT_INFO* ci)
 
 	if(ci->is_lock == 1 || ci->current_request_type != DOCTOR)
 		return -1;
-
+	
+	ci->current_request_type = 	JS;
+	return 0;
+	/*RES_DOC *doc = (RES_DOC*)ci->data;
+	if(doc != NULL && strlen(doc->js) > 0){
+		return 0;
+	}
+	*/
 	CRequestHeader rh;
 	std::ostringstream oss;
 
@@ -1528,7 +1567,7 @@ int 	CHttpProcesser::RequestDialogbJS(apr_socket_t* s,CLIENT_INFO* ci)
 	rh.SetHeaderField("Referer",oss.str());
 
 	rh.SetHeaderField("Accept-Language","zh-CN");
-	rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+	rh.SetHeaderField("User-Agent",USER_AGENT);
 	rh.SetHeaderField("Host","guahao.zjol.com.cn");
 	rh.SetHeaderField("Connection","Keep-Alive");
 	rh.SetHeaderField("Cookie",session_cookies);
@@ -1585,7 +1624,7 @@ int	CHttpProcesser::RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci)
 		rh.SetHeaderField("Accept","*/*");
 		rh.SetHeaderField("Content-Type","application/x-www-form-urlencoded");
 		rh.SetHeaderField("Accept-Encoding","gzip, deflate");
-		rh.SetHeaderField("User-Agent",IE_USER_AGENT);
+		rh.SetHeaderField("User-Agent",USER_AGENT);
 		rh.SetHeaderField("Host","guahao.zjol.com.cn");
 		rh.SetHeaderField("Connection","Keep-Alive");
 		rh.SetHeaderField("Cache-Control","no-cache");
@@ -1601,7 +1640,7 @@ int	CHttpProcesser::RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci)
 		split(doc->hy,items,"$");
 		split(items[0].c_str(),item,"|");
 		oss << item[0] << "&";
-
+		
 		oss << "yzm=" << doc->yzm << "&"
 			<< "xh="   << item[1] << "&"
 			<< "qhsj=" << item[2] << "&"
@@ -1621,7 +1660,8 @@ int	CHttpProcesser::RequestConfirmDoctor(apr_socket_t *s,CLIENT_INFO* ci)
 			close_connection(s,ci);
 			return -2;
 		}	
-
+		
+		//std::cout << req_header << std::endl;
 		int req_header_len = req_header.size();
 		bool finish = send_data(s,req_header.c_str(),req_header_len);
 
@@ -1740,7 +1780,8 @@ int 	CHttpProcesser::ProcessVerifyResult(apr_socket_t* s,CLIENT_INFO* ci)
 		}
 
 		run_logger.info("ProcessVerifyResult confirm verify response");
-
+		//std::cout << "write yzm.png" << std::endl;
+		//LOG_TO_FILE("yzm.png",res_content);
 		//由于每次进行确认选号的时候都需要验证码,并且对当前这个连接有效,因此取图片内容保持到ci->res_data中
 		memset(ci->res_data,0,ci->res_len);
 		memcpy(ci->res_data,res_content.c_str(),res_content.size());
@@ -1751,6 +1792,7 @@ int 	CHttpProcesser::ProcessVerifyResult(apr_socket_t* s,CLIENT_INFO* ci)
 		
 		RES_DOC* doc = (RES_DOC*)ci->data;
 		memset(doc->yzm,0,MAX_ITEM_LEN);
+		res_content[4]=0x0d;
 		use_feh_read_verify_code(res_content.c_str(),res_content.size(),doc->yzm);
 	}else{
 		//unkown type
@@ -1944,6 +1986,8 @@ int	CHttpProcesser::ProcessDoctorResult(apr_socket_t *s,CLIENT_INFO* ci)
 			run_logger.error("alloc buffer error");
 			return -11;
 		}
+		strcpy(doc->js,"f2shshx");
+
 		strcpy(doc->sfz,items[5].c_str());//身份证 
         strcpy(doc->xm ,items[6].c_str());//姓名
         strcpy(doc->yymc,items[1].c_str());//医院
@@ -2035,6 +2079,7 @@ int	CHttpProcesser::ProcessConfirmResult(apr_socket_t *s,CLIENT_INFO* ci)
 		}
 		//TODO:还要考虑号已经预约完了和当前预约失败的处理
 		run_logger.info("获取到预约结果的响应:%s",res_content.c_str());
+		char error_of_interface_msg[] = "ERROR|交易接口,验证码校验失败,该号不能预约";
 
 		std::vector<std::string> items;
 		split(res_content.c_str(),items,"|");
@@ -2046,11 +2091,18 @@ int	CHttpProcesser::ProcessConfirmResult(apr_socket_t *s,CLIENT_INFO* ci)
 			<< ",第" << items.at(13) << "号,取号密码:" << items.at(11) << "\n";
 			result_logger.info(oss.str().c_str());
 			exit(0);
+		}else if(strncmp(res_content.c_str(),error_of_interface_msg,sizeof(error_of_interface_msg)) == 0){
+			ci->is_lock = 0;
+			ci->current_request_type = JS;
+			std::cout << "error:" << error_of_interface_msg << "\tgoto request verify\n" << std::endl;
+			run_logger.debug("ProcessConfirmResult response failed with interface error,set request type to HOS");
+			return -3;
 		}else{
 			ci->is_lock = 0;
-			ci->current_request_type = DOCTOR;
+			ci->current_request_type = JS;
+			std::cout << "error:" << res_content << "\tgoto request verify\n" << std::endl;
 			run_logger.debug("ProcessConfirmResult response content is failed,set request type to DOCTOR");
-			return -3;
+			return -4;
 		}
 		//957102|浙二医院|外科|徐斌|1069018|350521197404071798|高乐音|1616887|20121121|0|5|13842106|42922816|11|0940
 

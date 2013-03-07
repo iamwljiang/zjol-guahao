@@ -8,9 +8,11 @@ ZLIB_LIB=$(PACKET)/zlib-1.2.6/libz.a
 PSL_INC=$(PACKET)/polarssl-1.1.3/include
 PSL_LIB=$(PACKET)/polarssl-1.1.3/library/libpolarssl.a
 
-LIB=$(APR_LIB) $(ZLIB_LIB) $(PSL_LIB) -lpthread
-INC=-I. -I$(APR_INC) -I$(ZLIB_INC) -I$(PSL_INC) 
-CFLAG=-g -DAPR $(INC)
+BOOST_INC=$(PACKET)/boost_1_47_0
+BOOST_LIB=$(BOOST_INC)/stage/lib/libboost_thread.a
+LIB=$(APR_LIB) $(ZLIB_LIB) $(PSL_LIB) $(BOOST_LIB) -lpthread
+INC=-I. -I$(APR_INC) -I$(ZLIB_INC) -I$(PSL_INC) -I$(BOOST_INC)
+CFLAG=-g -DAPR  -DUSE_BOOST_THREAD $(INC)
 CXX=g++
 
 SOURCE=$(wildcard *.cpp)
@@ -20,7 +22,6 @@ OBJS=$(filter-out main.o,$(OBJ))
 	$(CXX) $(CFLAG) -c $< -o $@
 
 build:$(OBJS)
-	echo $(OBJ)
 	$(CXX) $(CFLAG) $(OBJS) main.cpp -o guahao $(LIB)
 clean:
 	rm -rf *.o

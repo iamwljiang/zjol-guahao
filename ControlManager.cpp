@@ -28,7 +28,7 @@
 #include "ControlManager.h"
 #include "Strutil.h"
 #include "ssignal.h"
-unsigned int CControlManager::THREAD_NUMBER = 2;
+unsigned int CControlManager::THREAD_NUMBER = 1;
 static unsigned int global_exit_flag = 0;
 
 extern Logger run_logger;
@@ -53,9 +53,9 @@ CControlManager::CControlManager()
 
 	day = "";
 	
-	thread_number = 2;
+	thread_number = 1;
 
-	connection_number = 5;
+	connection_number = 1;
 	apr_initialize();
 }
 
@@ -177,7 +177,7 @@ int CControlManager::Run(const std::string& hos,const std::string& dep,const std
 			last_time = now;
 		}
 
-		usleep(50);
+		sleep(100);
 	}
 	
 	for(int i = 0; i < thread_pools.size(); ++i){

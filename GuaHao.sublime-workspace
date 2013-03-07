@@ -528,14 +528,6 @@
 			}
 		},
 		{
-			"file": "HttpProcesser.cpp",
-			"settings":
-			{
-				"buffer_size": 56535,
-				"line_ending": "Windows"
-			}
-		},
-		{
 			"file": "ControlManager.h",
 			"settings":
 			{
@@ -547,7 +539,7 @@
 			"file": "ControlManager.cpp",
 			"settings":
 			{
-				"buffer_size": 5103,
+				"buffer_size": 5104,
 				"line_ending": "Windows"
 			}
 		},
@@ -598,6 +590,14 @@
 				"buffer_size": 1908,
 				"line_ending": "Windows"
 			}
+		},
+		{
+			"file": "HttpProcesser.cpp",
+			"settings":
+			{
+				"buffer_size": 56535,
+				"line_ending": "Windows"
+			}
 		}
 	],
 	"build_system": "",
@@ -628,6 +628,7 @@
 	},
 	"file_history":
 	[
+		"/E/Company/self/guahao/HttpProcesser.cpp",
 		"/E/Company/self/guahao/FUTURE",
 		"/E/Company/self/guahao/logger.h",
 		"/E/Company/self/guahao/logger.cpp",
@@ -653,7 +654,6 @@
 		"/E/Company/self/guahao/Struitl.h",
 		"/E/Company/self/guahao/README",
 		"/E/Company/self/guahao/Makefile",
-		"/E/Company/self/guahao/HttpProcesser.cpp",
 		"/E/Company/self/guahao/Login.cpp",
 		"/E/Company/self/guahao/Login.h",
 		"/C/Users/lenovo/Desktop/zjol/dialogA.js",
@@ -695,6 +695,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"set_visit_cookie",
+			"lastVisitTime",
+			"LOG_SOCK_ERROR",
+			"CHttpProcesser::read_data recv_buffer == NULL",
 			"ProcessActive socket have data need read,socket is not null",
 			"ProcessActive socket have data need read,socket is not null,sock ",
 			"请求登陆",
@@ -818,11 +822,7 @@
 			"RequestHospital",
 			"RequestLogin",
 			"void			RequestLogin();\n\n	void 			RequestHospital();\n\n	void 			RequestDepartment();\n\n	void 			RequestDoctor();\n",
-			"std::cout",
-			"showDialog",
-			"zYuyue",
-			"showDialog",
-			"online_msg_thread_func"
+			"std::cout"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -840,7 +840,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 9,
 			"sheets":
 			[
 				{
@@ -872,33 +872,6 @@
 				},
 				{
 					"buffer": 1,
-					"file": "HttpProcesser.cpp",
-					"settings":
-					{
-						"buffer_size": 56535,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								47118,
-								47118
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 30555.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 2,
 					"file": "ControlManager.h",
 					"settings":
 					{
@@ -925,19 +898,19 @@
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 2,
 					"file": "ControlManager.cpp",
 					"settings":
 					{
-						"buffer_size": 5103,
+						"buffer_size": 5104,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1760,
-								1760
+								3870,
+								3887
 							]
 						],
 						"settings":
@@ -946,13 +919,13 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 135.0,
+						"translation.y": 1890.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 3,
 					"file": "main.cpp",
 					"settings":
 					{
@@ -963,8 +936,8 @@
 						"selection":
 						[
 							[
-								2208,
-								2208
+								3738,
+								3753
 							]
 						],
 						"settings":
@@ -973,13 +946,13 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 360.0,
+						"translation.y": 1260.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 4,
 					"file": "Strutil.h",
 					"settings":
 					{
@@ -1005,7 +978,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 5,
 					"file": "Strutil.cpp",
 					"settings":
 					{
@@ -1032,7 +1005,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 6,
 					"file": "logger.cpp",
 					"settings":
 					{
@@ -1059,7 +1032,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 7,
 					"file": "ssignal.cpp",
 					"settings":
 					{
@@ -1087,7 +1060,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 8,
 					"file": "ssignal.h",
 					"settings":
 					{
@@ -1108,6 +1081,33 @@
 						},
 						"translation.x": 0.0,
 						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "HttpProcesser.cpp",
+					"settings":
+					{
+						"buffer_size": 56535,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								35764,
+								35764
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 19650.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
